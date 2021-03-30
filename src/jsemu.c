@@ -1,6 +1,6 @@
 /*
  * JS emulator main
- * 
+ *
  * Copyright (c) 2016-2017 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -44,11 +44,11 @@ void virt_machine_run(void *opaque);
 
 /* provided in lib.js */
 extern void console_write(void *opaque, const uint8_t *buf, int len);
-extern void console_get_size(int *pw, int *ph);
 extern void fb_refresh(void *opaque, void *data,
                        int x, int y, int w, int h, int stride);
 extern void net_recv_packet(EthernetDevice *bs,
                             const uint8_t *buf, int len);
+
 
 static uint8_t console_fifo[1024];
 static int console_fifo_windex;
@@ -60,6 +60,27 @@ static int global_width;
 static int global_height;
 static VirtMachine *global_vm;
 static BOOL global_carrier_state;
+
+typedef enum {
+    BF_MODE_RO,
+    BF_MODE_RW,
+    BF_MODE_SNAPSHOT,
+} BlockDeviceModeEnum;
+
+typedef struct BlockDeviceFile {
+    FILE *f;
+    int64_t nb_sectors;
+    BlockDeviceModeEnum mode;
+    uint8_t **sector_table;
+} BlockDeviceFile;
+
+#define SECTOR_SIZE 512
+
+
+static void console_get_size(int *pw, int *ph) {
+  pw = 80;
+  ph = 24;
+}
 
 static int console_read(void *opaque, uint8_t *buf, int len)
 {
@@ -200,6 +221,7 @@ void vm_start(const char *url, int ram_size, const char *cmdline,
 
 static void init_vm_fs(void *arg)
 {
+    printf("init_vm_fs\n");
     VMStartState *s = arg;
     VirtMachineParams *p = s->p;
 
@@ -215,6 +237,133 @@ static void init_vm_fs(void *arg)
     }
 }
 
+static int64_t bf_get_sector_count(BlockDevice *bs)
+{
+    BlockDeviceFile *bf = bs->opaque;
+    return bf->nb_sectors;
+}
+
+static int bf_read_async(BlockDevice *bs,
+                         uint64_t sector_num, uint8_t *buf, int n,
+                         BlockDeviceCompletionFunc *cb, void *opaque)
+{
+    BlockDeviceFile *bf = bs->opaque;
+    //    printf("bf_read_async: sector_num=%" PRId64 " n=%d\n", sector_num, n);
+#ifdef DUMP_BLOCK_READ
+    {
+        static FILE *f;
+        if (!f)
+            f = fopen("/tmp/read_sect.txt", "wb");
+        fprintf(f, "%" PRId64 " %d\n", sector_num, n);
+    }
+#endif
+    if (!bf->f)
+        return -1;
+    if (bf->mode == BF_MODE_SNAPSHOT) {
+        int i;
+        for(i = 0; i < n; i++) {
+            if (!bf->sector_table[sector_num]) {
+                fseek(bf->f, sector_num * SECTOR_SIZE, SEEK_SET);
+                fread(buf, 1, SECTOR_SIZE, bf->f);
+            } else {
+                memcpy(buf, bf->sector_table[sector_num], SECTOR_SIZE);
+            }
+            sector_num++;
+            buf += SECTOR_SIZE;
+        }
+    } else {
+        fseek(bf->f, sector_num * SECTOR_SIZE, SEEK_SET);
+        fread(buf, 1, n * SECTOR_SIZE, bf->f);
+    }
+    /* synchronous read */
+    return 0;
+}
+
+
+static int bf_write_async(BlockDevice *bs,
+                          uint64_t sector_num, const uint8_t *buf, int n,
+                          BlockDeviceCompletionFunc *cb, void *opaque)
+{
+    BlockDeviceFile *bf = bs->opaque;
+    int ret;
+
+    switch(bf->mode) {
+    case BF_MODE_RO:
+        ret = -1; /* error */
+        break;
+    case BF_MODE_RW:
+        fseek(bf->f, sector_num * SECTOR_SIZE, SEEK_SET);
+        fwrite(buf, 1, n * SECTOR_SIZE, bf->f);
+        ret = 0;
+        break;
+    case BF_MODE_SNAPSHOT:
+        {
+            int i;
+            if ((sector_num + n) > bf->nb_sectors)
+                return -1;
+            for(i = 0; i < n; i++) {
+                if (!bf->sector_table[sector_num]) {
+                    bf->sector_table[sector_num] = malloc(SECTOR_SIZE);
+                }
+                memcpy(bf->sector_table[sector_num], buf, SECTOR_SIZE);
+                sector_num++;
+                buf += SECTOR_SIZE;
+            }
+            ret = 0;
+        }
+        break;
+    default:
+        abort();
+    }
+
+    return ret;
+}
+
+
+static BlockDevice *block_device_init(const char *filename,
+                                      BlockDeviceModeEnum mode)
+{
+    BlockDevice *bs;
+    BlockDeviceFile *bf;
+    int64_t file_size;
+    FILE *f;
+    const char *mode_str;
+
+    if (mode == BF_MODE_RW) {
+        mode_str = "r+b";
+    } else {
+        mode_str = "rb";
+    }
+
+    f = fopen(filename, mode_str);
+    if (!f) {
+        perror(filename);
+        exit(1);
+    }
+    fseek(f, 0, SEEK_END);
+    file_size = ftello(f);
+
+    bs = mallocz(sizeof(*bs));
+    bf = mallocz(sizeof(*bf));
+
+    bf->mode = mode;
+    bf->nb_sectors = file_size / 512;
+    bf->f = f;
+
+    if (mode == BF_MODE_SNAPSHOT) {
+        bf->sector_table = mallocz(sizeof(bf->sector_table[0]) *
+                                   bf->nb_sectors);
+    }
+
+    bs->opaque = bf;
+    bs->get_sector_count = bf_get_sector_count;
+    bs->read_async = bf_read_async;
+    bs->write_async = bf_write_async;
+    return bs;
+}
+
+
+
 static void init_vm_drive(void *arg)
 {
     VMStartState *s = arg;
@@ -222,10 +371,8 @@ static void init_vm_drive(void *arg)
 
     if (p->drive_count > 0) {
         assert(p->drive_count == 1);
-        p->tab_drive[0].block_dev =
-            block_device_init_http(p->tab_drive[0].filename,
-                                   131072,
-                                   init_vm, s);
+        p->tab_drive[0].block_dev = block_device_init(p->tab_drive[0].filename, BF_MODE_RW);
+        init_vm(s);
     } else {
         init_vm(s);
     }
@@ -237,7 +384,7 @@ static void init_vm(void *arg)
     VirtMachine *m;
     VirtMachineParams *p = s->p;
     int i;
-    
+
     p->rtc_real_time = TRUE;
     p->ram_size = s->ram_size << 20;
     if (s->cmdline && s->cmdline[0] != '\0') {
@@ -253,7 +400,7 @@ static void init_vm(void *arg)
     } else {
         p->console = console_init();
     }
-    
+
     if (p->eth_count > 0 && !s->has_network) {
         /* remove the interfaces */
         for(i = 0; i < p->eth_count; i++) {
@@ -284,7 +431,7 @@ static void init_vm(void *arg)
     if (m->net) {
         m->net->device_set_carrier(m->net, global_carrier_state);
     }
-    
+
     free(s->p);
     free(s->cmdline);
     if (s->pwd) {
@@ -292,7 +439,7 @@ static void init_vm(void *arg)
         free(s->pwd);
     }
     free(s);
-    
+
     emscripten_async_call(virt_machine_run, m, 0);
 }
 
@@ -307,7 +454,7 @@ void virt_machine_run(void *opaque)
     VirtMachine *m = opaque;
     int delay, i;
     FBDevice *fb_dev;
-    
+
     if (m->console_dev && virtio_console_can_write_data(m->console_dev)) {
         uint8_t buf[128];
         int ret, len;
@@ -329,7 +476,7 @@ void virt_machine_run(void *opaque)
         /* refresh the display */
         fb_dev->refresh(fb_dev, fb_refresh1, NULL);
     }
-    
+
     i = 0;
     for(;;) {
         /* wait for an event: the only asynchronous event is the RTC timer */
@@ -339,7 +486,7 @@ void virt_machine_run(void *opaque)
         virt_machine_interp(m, MAX_EXEC_CYCLE);
         i++;
     }
-    
+
     if (delay == 0) {
         emscripten_async_call(virt_machine_run, m, 0);
     } else {

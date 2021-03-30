@@ -1,7 +1,7 @@
 const Module = require("./riscvemu64-wasm.js");
 
 const params =
-  [ "http://localhost:8000/root-riscv64.cfg"
+  [ "/home/build/root-riscv64.cfg"
   , 128
   , ""
   , null
@@ -11,8 +11,9 @@ const params =
   , ""
   ]
 
-// console.log(Module);
+// console.log(Module.NODEFS);
 
+Module.FS.mount(Module.NODEFS, { root: '/home/mhhf/src/jslinux' }, '/home')
 
 const start = () => {
   // console.log("start");
@@ -26,3 +27,4 @@ Module.run();
 setTimeout(() => {
   console.log("end");
 }, 20000000)
+

@@ -1,6 +1,6 @@
 /*
  * HTTP block device
- * 
+ *
  * Copyright (c) 2016-2017 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -76,7 +76,7 @@ typedef struct BlockDeviceHTTP {
     int prefetch_count;
     void (*start_cb)(void *opaque);
     void *start_opaque;
-    
+
     int64_t nb_sectors;
     int block_size; /* in sectors, power of two */
     int nb_blocks;
@@ -89,7 +89,7 @@ typedef struct BlockDeviceHTTP {
     Cluster **clusters; /* NULL if no written data */
     int n_clusters;
     int n_allocated_clusters;
-    
+
     /* statistics */
     int64_t n_read_sectors;
     int64_t n_read_blocks;
@@ -118,7 +118,7 @@ static CachedBlock *bf_find_block(BlockDeviceHTTP *bf, unsigned int block_num)
 {
     CachedBlock *b;
     struct list_head *el;
-    
+
     list_for_each(el, &bf->cached_blocks) {
         b = list_entry(el, CachedBlock, link);
         if (b->block_num == block_num) {
@@ -193,7 +193,7 @@ static void bf_start_load_block(BlockDevice *bs, int block_num)
            (int)(bf->n_allocated_clusters * bf->sectors_per_cluster / 2));
 #endif
     snprintf(filename, sizeof(filename), BLK_FMT, bf->url, block_num);
-    //    printf("wget %s\n", filename);
+    printf("wget %s\n", filename);
     fs_wget(filename, NULL, NULL, b, bf_read_onload, TRUE);
 }
 
@@ -207,7 +207,7 @@ static void bf_start_load_prefetch_group(BlockDevice *bs, int group_num,
     char filename[1024];
     BOOL req_flag;
     int i;
-    
+
     req_flag = FALSE;
     req = malloc(sizeof(*req));
     req->bf = bf;
@@ -228,7 +228,7 @@ static void bf_start_load_prefetch_group(BlockDevice *bs, int group_num,
 
     if (req_flag) {
         snprintf(filename, sizeof(filename), GROUP_FMT, bf->url, group_num);
-        //        printf("wget %s\n", filename);
+        printf("wget2 %s\n", filename);
         fs_wget(filename, NULL, NULL, req, bf_prefetch_group_onload, TRUE);
         /* XXX: should add request in a list to free it for clean exit */
     } else {
@@ -243,7 +243,7 @@ static void bf_prefetch_group_onload(void *opaque, int err, void *data,
     BlockDeviceHTTP *bf = req->bf;
     CachedBlock *b;
     int block_bytes, i;
-    
+
     if (err < 0) {
         fprintf(stderr, "Could not load group %u\n", req->group_num);
         exit(1);
@@ -265,7 +265,7 @@ static int bf_rw_async1(BlockDevice *bs, BOOL is_sync)
     int offset, block_num, n, cluster_num;
     CachedBlock *b;
     Cluster *c;
-    
+
     for(;;) {
         n = bf->sector_count - bf->sector_index;
         if (n == 0)
@@ -289,7 +289,7 @@ static int bf_rw_async1(BlockDevice *bs, BOOL is_sync)
             offset = bf->sector_num % bf->block_size;
             n = min_int(n, bf->block_size - offset);
             bf->cur_block_num = block_num;
-            
+
             b = bf_find_block(bf, block_num);
             if (b) {
                 if (b->state == CBLOCK_LOADING) {
@@ -334,7 +334,7 @@ static int bf_rw_async1(BlockDevice *bs, BOOL is_sync)
         //        printf("end of request\n");
         /* end of request */
         bf->cb(bf->opaque, 0);
-    } 
+    }
     return 0;
 }
 
@@ -346,7 +346,7 @@ static void bf_update_block(CachedBlock *b, const uint8_t *data)
     assert(b->state == CBLOCK_LOADING);
     file_buffer_write(&b->fbuf, 0, data, bf->block_size * 512);
     b->state = CBLOCK_LOADED;
-    
+
     /* continue I/O read/write if necessary */
     if (b->block_num == bf->cur_block_num) {
         bf_rw_async1(bs, FALSE);
@@ -362,7 +362,7 @@ static void bf_read_onload(void *opaque, int err, void *data, size_t size)
         fprintf(stderr, "Could not load block %u\n", b->block_num);
         exit(1);
     }
-    
+
     assert(size == bf->block_size * 512);
     bf_update_block(b, data);
 }
@@ -426,12 +426,13 @@ BlockDevice *block_device_init_http(const char *url,
     bf->start_cb = start_cb;
     bf->start_opaque = start_opaque;
     bf->bs = bs;
-    
+
     bs->opaque = bf;
     bs->get_sector_count = bf_get_sector_count;
     bs->read_async = bf_read_async;
     bs->write_async = bf_write_async;
-    
+
+    printf("1234 %s\n", url);
     fs_wget(url, NULL, NULL, bs, bf_init_onload, TRUE);
     return bs;
 }
@@ -442,7 +443,7 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
     BlockDeviceHTTP *bf = bs->opaque;
     int block_size_kb, block_num;
     JSONValue cfg, array;
-    
+
     if (err < 0) {
         fprintf(stderr, "Could not load block device file (err=%d)\n", -err);
         exit(1);
@@ -476,7 +477,7 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
     bf->n_cached_blocks = 0;
     bf->n_cached_blocks_max = max_int(1, bf->max_cache_size_kb / block_size_kb);
     bf->cur_block_num = -1; /* no request in progress */
-    
+
     bf->sectors_per_cluster = 8; /* 4 KB */
     bf->n_clusters = (bf->nb_sectors + bf->sectors_per_cluster - 1) / bf->sectors_per_cluster;
     bf->clusters = mallocz(sizeof(bf->clusters[0]) * bf->n_clusters);
@@ -488,13 +489,13 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
         vm_error("prefetch_group_len is too large");
         goto config_error;
     }
-    
+
     array = json_object_get(cfg, "prefetch");
     if (!json_is_undefined(array)) {
         int idx, prefetch_len, l, i;
         JSONValue el;
         int tab_block_num[PREFETCH_GROUP_LEN_MAX];
-                          
+
         if (array.type != JSON_ARRAY) {
             vm_error("expecting an array\n");
             goto config_error;
@@ -524,7 +525,7 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
         }
     }
     json_free(cfg);
-    
+
     if (bf->start_cb) {
         bf->start_cb(bf->start_opaque);
     }

@@ -24,9 +24,9 @@
 
 # Build the Javascript version of TinyEMU
 EMCC=emcc
-EMCFLAGS=-O0 --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -fno-strict-aliasing -DCONFIG_FS_NET
+EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -fno-strict-aliasing
 #EMCFLAGS+=-Werror
-EMLDFLAGS=-O0 --memory-init-file 0 --closure 0 -s NO_EXIT_RUNTIME=1 -s NO_FILESYSTEM=1 -s "EXPORTED_FUNCTIONS=['_console_queue_char','_vm_start','_fs_import_file','_display_key_event','_display_mouse_event','_display_wheel_event','_net_write_packet','_net_set_carrier']" -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["ccall", "cwrap", "UTF8ToString"]' --js-library js/lib.js
+EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s EXIT_RUNTIME -s FILESYSTEM=1 -s "EXPORTED_FUNCTIONS=['_console_queue_char','_vm_start','_fs_import_file','_display_key_event','_display_mouse_event','_display_wheel_event','_net_write_packet','_net_set_carrier']" -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["ccall", "cwrap", "UTF8ToString", "FS", "NODEFS"]' --js-library js/lib.js -lnodefs.js
 EMLDFLAGS_ASMJS:=$(EMLDFLAGS) -s WASM=0
 EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=67108864 -s ALLOW_MEMORY_GROWTH=1
 
@@ -50,7 +50,7 @@ src/riscv_cpu64.js.o: src/riscv_cpu.c
 src/%.js.o: src/%.c
 	$(EMCC) $(EMCFLAGS) -c -o $@ $<
 
-build/run.js:
+build/run.js: web/run.js
 	mkdir -p build
 	cp -r web/* build/
 

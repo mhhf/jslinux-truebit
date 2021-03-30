@@ -23,8 +23,6 @@
  */
 
 
-
-
 mergeInto(LibraryManager.library, {
     console_write: function(opaque, buf, len)
     {
@@ -65,7 +63,19 @@ mergeInto(LibraryManager.library, {
 
     emscripten_async_wget3_data: function(url, request, user, password, post_data, post_data_len, arg, free, onload, onerror, onprogress) {
       console.log("emscripten_async_wget3_data", url, request, user, password, post_data, post_data_len, arg, free, onload, onerror, onprogress);
-      console.log(UTF8ToString(url));
+
+      const path = UTF8ToString(url);
+
+      console.log("url", path);
+      console.log("request", UTF8ToString(request));
+      // console.log("fs", FS.open(path, "r"));
+
+      // var byteArray = new Uint8Array();
+      // var buffer = _malloc(byteArray.length);
+      // HEAPU8.set(byteArray, buffer);
+      // if (onload) Runtime.dynCall('viiii', onload, [handle, arg, buffer, byteArray.length]);
+      // if (free) _free(buffer);
+
     // var _url = Pointer_stringify(url);
     // var _request = Pointer_stringify(request);
     // var _user;

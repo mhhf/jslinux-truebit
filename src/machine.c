@@ -37,9 +37,6 @@
 #include "virtio.h"
 #include "machine.h"
 #include "fs_utils.h"
-#ifdef CONFIG_FS_NET
-#include "fs_wget.h"
-#endif
 
 void __attribute__((format(printf, 1, 2))) vm_error(const char *fmt, ...)
 {
@@ -446,12 +443,6 @@ char *get_file_path(const char *base_filename, const char *filename)
 }
 
 
-#ifdef EMSCRIPTEN
-static int load_file(uint8_t **pbuf, const char *filename)
-{
-    abort();
-}
-#else
 /* return -1 if error. */
 static int load_file(uint8_t **pbuf, const char *filename)
 {
@@ -476,33 +467,12 @@ static int load_file(uint8_t **pbuf, const char *filename)
     *pbuf = buf;
     return size;
 }
-#endif
 
-#ifdef CONFIG_FS_NET
-static void config_load_file_cb(void *opaque, int err, void *data, size_t size)
-{
-    VMConfigLoadState *s = opaque;
-
-    //    printf("err=%d data=%p size=%ld\n", err, data, size);
-    if (err < 0) {
-        vm_error("Error %d while loading file\n", -err);
-        exit(1);
-    }
-    s->file_load_cb(s->file_load_opaque, data, size);
-}
-#endif
 
 static void config_load_file(VMConfigLoadState *s, const char *filename,
                              FSLoadFileCB *cb, void *opaque)
 {
-    //    printf("loading %s\n", filename);
-#ifdef CONFIG_FS_NET
-    if (is_url(filename)) {
-        s->file_load_cb = cb;
-        s->file_load_opaque = opaque;
-        fs_wget(filename, NULL, NULL, s, config_load_file_cb, TRUE);
-    } else
-#endif
+       printf("loading %s\n", filename);
     {
         uint8_t *buf;
         int size;
@@ -518,6 +488,7 @@ void virt_machine_load_config_file(VirtMachineParams *p,
                                    void *opaque)
 {
     VMConfigLoadState *s;
+    printf("virt_machine_load_config_file %s\n", filename);
 
     s = mallocz(sizeof(*s));
     s->vm_params = p;
@@ -538,6 +509,7 @@ static void config_file_loaded(void *opaque, uint8_t *buf, int buf_len)
 
     /* load the additional files */
     s->file_index = 0;
+    printf("config_file_loaded\n");
     config_additional_file_load(s);
 }
 
@@ -549,6 +521,7 @@ static void config_additional_file_load(VMConfigLoadState *s)
         s->file_index++;
     }
     if (s->file_index == VM_FILE_COUNT) {
+      printf("cb \n");
         if (s->start_cb)
             s->start_cb(s->opaque);
         free(s);
@@ -557,6 +530,7 @@ static void config_additional_file_load(VMConfigLoadState *s)
 
         fname = get_file_path(p->cfg_filename,
                               p->files[s->file_index].filename);
+        printf("file %s\n", fname);
         config_load_file(s, fname,
                          config_additional_file_load_cb, s);
         free(fname);
@@ -575,6 +549,7 @@ static void config_additional_file_load_cb(void *opaque,
 
     /* load the next files */
     s->file_index++;
+    printf("config_additional_file_load_cb\n");
     config_additional_file_load(s);
 }
 
