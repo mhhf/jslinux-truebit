@@ -34,14 +34,6 @@ mergeInto(LibraryManager.library, {
         // term.write(str);
     },
 
-    console_get_size: function(pw, ph)
-    {
-        var w, h, r;
-        r = term.getSize();
-        HEAPU32[pw >> 2] = r[0];
-        HEAPU32[ph >> 2] = r[1];
-    },
-
     fs_export_file: function(filename, buf, buf_len)
     {
       // console.log(63453, filename, buf, buf_len);
@@ -219,6 +211,7 @@ mergeInto(LibraryManager.library, {
 
   file_buffer_init: function(bs)
   {
+    console.log("fb_init");
       var h;
       HEAPU32[bs >> 2] = 0;
       HEAPU32[(bs + 4) >> 2] = 0;
@@ -227,6 +220,7 @@ mergeInto(LibraryManager.library, {
   file_buffer_resize__deps: ['file_buffer_get_new_handle'],
   file_buffer_resize: function(bs, new_size)
   {
+    console.log("fb_resize");
       var h, size, new_data, size1, i, data;
       h = HEAPU32[bs >> 2];
       size = HEAPU32[(bs + 4) >> 2];
@@ -275,6 +269,7 @@ mergeInto(LibraryManager.library, {
 
   file_buffer_read: function(bs, offset, buf, size)
   {
+    console.log("fb_read");
       var h, data, i;
       h = HEAPU32[bs >> 2];
       if (h) {

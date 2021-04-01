@@ -25,7 +25,14 @@ Module.postRun = start
 
 Module.run();
 
-setTimeout(() => {
-  console.log("end");
-}, 20000000)
+// const send = "/sbin/halt -f"
+const send = "ls -l /sbin/\nhalt -f"
 
+setTimeout(() => {
+  send
+    .split('')
+    .concat('\n')
+    .forEach(char => {
+      Module.ccall("console_queue_char", null, ["int"], [ char.charCodeAt(0) ]);
+    })
+}, 100)

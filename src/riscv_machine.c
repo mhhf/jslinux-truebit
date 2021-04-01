@@ -1,6 +1,6 @@
 /*
  * RISCV machine
- * 
+ *
  * Copyright (c) 2016-2017 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -217,7 +217,7 @@ static uint32_t clint_read(void *opaque, uint32_t offset, int size_log2)
     }
     return val;
 }
- 
+
 static void clint_write(void *opaque, uint32_t offset, uint32_t val,
                       int size_log2)
 {
@@ -285,7 +285,7 @@ static void plic_write(void *opaque, uint32_t offset, uint32_t val,
                        int size_log2)
 {
     RISCVMachine *s = opaque;
-    
+
     assert(size_log2 == 2);
     switch(offset) {
     case PLIC_HART_BASE + 4:
@@ -306,7 +306,7 @@ static void plic_set_irq(void *opaque, int irq_num, int state)
     uint32_t mask;
 
     mask = 1 << (irq_num - 1);
-    if (state) 
+    if (state)
         s->plic_pending_irq |= mask;
     else
         s->plic_pending_irq &= ~mask;
@@ -352,7 +352,7 @@ typedef struct {
     int tab_len;
     int tab_size;
     int open_node_count;
-    
+
     char *string_table;
     int string_table_len;
     int string_table_size;
@@ -385,7 +385,7 @@ static void fdt_put32(FDTState *s, int v)
 static void fdt_put_data(FDTState *s, const uint8_t *data, int len)
 {
     int len1;
-    
+
     len1 = (len + 3) / 4;
     fdt_alloc_len(s, s->tab_len + len1);
     memcpy(s->tab + s->tab_len, data, len);
@@ -506,7 +506,7 @@ static void fdt_prop_tab_str(FDTState *s, const char *prop_name,
         size += str_size;
     }
     va_end(ap);
-    
+
     tab = malloc(size);
     va_start(ap, prop_name);
     size = 0;
@@ -519,7 +519,7 @@ static void fdt_prop_tab_str(FDTState *s, const char *prop_name,
         size += str_size;
     }
     va_end(ap);
-    
+
     fdt_prop(s, prop_name, tab, size);
     free(tab);
 }
@@ -534,9 +534,9 @@ int fdt_output(FDTState *s, uint8_t *dst)
     int pos;
 
     assert(s->open_node_count == 0);
-    
+
     fdt_put32(s, FDT_END);
-    
+
     dt_struct_size = s->tab_len * sizeof(uint32_t);
     dt_strings_size = s->string_table_len;
 
@@ -595,11 +595,11 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     uint32_t misa;
     uint32_t tab[4];
     FBDevice *fb_dev;
-    
+
     s = fdt_init();
 
     cur_phandle = 1;
-    
+
     fdt_begin_node(s, "");
     fdt_prop_u32(s, "#address-cells", 2);
     fdt_prop_u32(s, "#size-cells", 2);
@@ -629,7 +629,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     }
     *q = '\0';
     fdt_prop_str(s, "riscv,isa", isa_string);
-    
+
     fdt_prop_str(s, "mmu-type", max_xlen <= 32 ? "riscv,sv32" : "riscv,sv48");
     fdt_prop_u32(s, "clock-frequency", 2000000000);
 
@@ -640,9 +640,9 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     intc_phandle = cur_phandle++;
     fdt_prop_u32(s, "phandle", intc_phandle);
     fdt_end_node(s); /* interrupt-controller */
-    
+
     fdt_end_node(s); /* cpu */
-    
+
     fdt_end_node(s); /* cpus */
 
     fdt_begin_node_num(s, "memory", RAM_BASE_ADDR);
@@ -652,7 +652,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     tab[2] = m->ram_size >> 32;
     tab[3] = m->ram_size;
     fdt_prop_tab_u32(s, "reg", tab, 4);
-    
+
     fdt_end_node(s); /* memory */
 
     fdt_begin_node(s, "htif");
@@ -676,7 +676,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     fdt_prop_tab_u32(s, "interrupts-extended", tab, 4);
 
     fdt_prop_tab_u64_2(s, "reg", CLINT_BASE_ADDR, CLINT_SIZE);
-    
+
     fdt_end_node(s); /* clint */
 
     fdt_begin_node_num(s, "plic", PLIC_BASE_ADDR);
@@ -696,7 +696,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
     fdt_prop_u32(s, "phandle", plic_phandle);
 
     fdt_end_node(s); /* plic */
-    
+
     for(i = 0; i < m->virtio_count; i++) {
         fdt_begin_node_num(s, "virtio", VIRTIO_BASE_ADDR + i * VIRTIO_SIZE);
         fdt_prop_str(s, "compatible", "virtio,mmio");
@@ -719,7 +719,7 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
         fdt_prop_str(s, "format", "a8r8g8b8");
         fdt_end_node(s); /* framebuffer */
     }
-    
+
     fdt_end_node(s); /* soc */
 
     fdt_begin_node(s, "chosen");
@@ -732,10 +732,10 @@ static int riscv_build_fdt(RISCVMachine *m, uint8_t *dst,
         fdt_prop_tab_u64(s, "linux,initrd-start", initrd_start);
         fdt_prop_tab_u64(s, "linux,initrd-end", initrd_start + initrd_size);
     }
-    
+
 
     fdt_end_node(s); /* chosen */
-    
+
     fdt_end_node(s); /* / */
 
     size = fdt_output(s, dst);
@@ -795,9 +795,9 @@ static void copy_bios(RISCVMachine *s, const uint8_t *buf, int buf_len,
             exit(1);
         }
     }
-    
+
     ram_ptr = get_ram_ptr(s, 0, TRUE);
-    
+
     fdt_addr = 0x1000 + 8 * 8;
 
     riscv_build_fdt(s, ram_ptr + fdt_addr,
@@ -806,7 +806,7 @@ static void copy_bios(RISCVMachine *s, const uint8_t *buf, int buf_len,
                     cmd_line);
 
     /* jump_addr = 0x80000000 */
-    
+
     q = (uint32_t *)(ram_ptr + 0x1000);
     q[0] = 0x297 + 0x80000000 - 0x1000; /* auipc t0, jump_addr */
     q[1] = 0x597; /* auipc a1, dtb */
@@ -844,7 +844,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         vm_error("unsupported machine: %s\n", p->machine_name);
         return NULL;
     }
-    
+
     s = mallocz(sizeof(*s));
     s->common.vmc = p->vmc;
     s->ram_size = p->ram_size;
@@ -868,7 +868,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
     if (p->rtc_real_time) {
         s->rtc_start_time = rtc_get_real_time(s);
     }
-    
+
     cpu_register_device(s->mem_map, CLINT_BASE_ADDR, CLINT_SIZE, s,
                         clint_read, clint_write, DEVIO_SIZE32);
     cpu_register_device(s->mem_map, PLIC_BASE_ADDR, PLIC_SIZE, s,
@@ -885,7 +885,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
     vbus->mem_map = s->mem_map;
     vbus->addr = VIRTIO_BASE_ADDR;
     irq_num = VIRTIO_IRQ;
-    
+
     /* virtio console */
     if (p->console) {
         vbus->irq = &s->plic_irq[irq_num];
@@ -894,7 +894,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         irq_num++;
         s->virtio_count++;
     }
-    
+
     /* virtio net device */
     for(i = 0; i < p->eth_count; i++) {
         vbus->irq = &s->plic_irq[irq_num];
@@ -928,21 +928,22 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         s->virtio_count++;
     }
 
-    if (p->display_device) {
-        FBDevice *fb_dev;
-        fb_dev = mallocz(sizeof(*fb_dev));
-        s->common.fb_dev = fb_dev;
-        if (!strcmp(p->display_device, "simplefb")) {
-            simplefb_init(s->mem_map,
-                          FRAMEBUFFER_BASE_ADDR,
-                          fb_dev,
-                          p->width, p->height);
-            
-        } else {
-            vm_error("unsupported display device: %s\n", p->display_device);
-            exit(1);
-        }
-    }
+    // DONT display screen
+    /* if (p->display_device) { */
+    /*     FBDevice *fb_dev; */
+    /*     fb_dev = mallocz(sizeof(*fb_dev)); */
+    /*     s->common.fb_dev = fb_dev; */
+    /*     if (!strcmp(p->display_device, "simplefb")) { */
+    /*         simplefb_init(s->mem_map, */
+    /*                       FRAMEBUFFER_BASE_ADDR, */
+    /*                       fb_dev, */
+    /*                       p->width, p->height); */
+    /*          */
+    /*     } else { */
+    /*         vm_error("unsupported display device: %s\n", p->display_device); */
+    /*         exit(1); */
+    /*     } */
+    /* } */
 
     if (p->input_device) {
         if (!strcmp(p->input_device, "virtio")) {
@@ -964,7 +965,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
             exit(1);
         }
     }
-    
+
     if (!p->files[VM_FILE_BIOS].buf) {
         vm_error("No bios found");
     }
@@ -973,7 +974,7 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
               p->files[VM_FILE_KERNEL].buf, p->files[VM_FILE_KERNEL].len,
               p->files[VM_FILE_INITRD].buf, p->files[VM_FILE_INITRD].len,
               p->cmdline);
-    
+
     return (VirtMachine *)s;
 }
 
@@ -992,7 +993,7 @@ static int riscv_machine_get_sleep_duration(VirtMachine *s1, int delay)
     RISCVMachine *m = (RISCVMachine *)s1;
     RISCVCPUState *s = m->cpu_state;
     int64_t delay1;
-    
+
     /* wait for an event: the only asynchronous event is the RTC timer */
     if (!(riscv_cpu_get_mip(s) & MIP_MTIP)) {
         delay1 = m->timecmp - rtc_get_time(m);

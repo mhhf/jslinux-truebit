@@ -34,7 +34,7 @@ PROGS=build/riscvemu64-wasm.js build/run.js
 
 all: $(PROGS)
 
-JS_OBJS=src/jsemu.js.o src/softfp.js.o src/virtio.js.o src/fs.js.o src/fs_utils.js.o src/simplefb.js.o src/pci.js.o src/json.js.o
+JS_OBJS=src/jsemu.js.o src/softfp.js.o src/virtio.js.o src/fs.js.o src/fs_utils.js.o src/pci.js.o src/json.js.o
 JS_OBJS+=src/iomem.js.o src/cutils.js.o src/aes.js.o src/sha256.js.o
 
 RISCVEMU64_OBJS=$(JS_OBJS) src/riscv_cpu64.js.o src/riscv_machine.js.o src/machine.js.o

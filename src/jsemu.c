@@ -46,8 +46,8 @@ void virt_machine_run(void *opaque);
 extern void console_write(void *opaque, const uint8_t *buf, int len);
 extern void fb_refresh(void *opaque, void *data,
                        int x, int y, int w, int h, int stride);
-extern void net_recv_packet(EthernetDevice *bs,
-                            const uint8_t *buf, int len);
+/* extern void net_recv_packet(EthernetDevice *bs, */
+/*                             const uint8_t *buf, int len); */
 
 
 static uint8_t console_fifo[1024];
@@ -430,18 +430,19 @@ static void init_vm(void *arg)
         p->eth_count = 0;
     }
 
-    if (p->eth_count > 0) {
-        EthernetDevice *net;
-        int i;
-        assert(p->eth_count == 1);
-        net = mallocz(sizeof(EthernetDevice));
-        net->mac_addr[0] = 0x02;
-        for(i = 1; i < 6; i++)
-            net->mac_addr[i] = (int)(emscripten_random() * 256);
-        net->write_packet = net_recv_packet;
-        net->opaque = NULL;
-        p->tab_eth[0].net = net;
-    }
+    // DONT expose network
+    /* if (p->eth_count > 0) { */
+    /*     EthernetDevice *net; */
+    /*     int i; */
+    /*     assert(p->eth_count == 1); */
+    /*     net = mallocz(sizeof(EthernetDevice)); */
+    /*     net->mac_addr[0] = 0x02; */
+    /*     for(i = 1; i < 6; i++) */
+    /*         net->mac_addr[i] = (int)(emscripten_random() * 256); */
+    /*     net->write_packet = net_recv_packet; */
+    /*     net->opaque = NULL; */
+    /*     p->tab_eth[0].net = net; */
+    /* } */
 
     m = virt_machine_init(p);
     global_vm = m;
@@ -461,7 +462,8 @@ static void init_vm(void *arg)
     free(s);
 
     /* printf("run\n"); */
-    emscripten_async_call(virt_machine_run, m, 0);
+    /* emscripten_async_call(virt_machine_run, m, 0); */
+    virt_machine_run(m);
 }
 
 /* need to be long enough to hide the non zero delay of setTimeout(_, 0) */
@@ -508,10 +510,14 @@ void virt_machine_run(void *opaque)
         i++;
     }
 
+    /* printf("delay %x\n", delay); */
     if (delay == 0) {
-        emscripten_async_call(virt_machine_run, m, 0);
+        /* emscripten_async_call(virt_machine_run, m, 0); */
+        virt_machine_run(m);
     } else {
+        /* printf("sleep %n\n", MAX_SLEEP_TIME); */
         emscripten_async_call(virt_machine_run, m, MAX_SLEEP_TIME);
+        /* virt_machine_run(m); */
     }
 }
 

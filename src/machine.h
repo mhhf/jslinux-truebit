@@ -1,6 +1,6 @@
 /*
  * VM definitions
- * 
+ *
  * Copyright (c) 2016-2017 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -102,7 +102,7 @@ typedef struct {
     char *cmdline; /* bios or kernel command line */
     BOOL accel_enable; /* enable acceleration (KVM) */
     char *input_device; /* NULL means no input */
-    
+
     /* kernel, bios and other auxiliary files */
     VMFileEntry files[VM_FILE_COUNT];
 } VirtMachineParams;
@@ -176,8 +176,8 @@ void sdl_init(int width, int height);
 
 /* simplefb.c */
 typedef struct SimpleFBState SimpleFBState;
-SimpleFBState *simplefb_init(PhysMemoryMap *map, uint64_t phys_addr,
-                             FBDevice *fb_dev, int width, int height);
+// SimpleFBState *simplefb_init(PhysMemoryMap *map, uint64_t phys_addr,
+//                              FBDevice *fb_dev, int width, int height);
 void simplefb_refresh(FBDevice *fb_dev,
                       SimpleFBDrawFunc *redraw_func, void *opaque,
                       PhysMemoryRange *mem_range,
@@ -188,7 +188,7 @@ typedef struct VGAState VGAState;
 VGAState *pci_vga_init(PCIBus *bus, FBDevice *fb_dev,
                        int width, int height,
                        const uint8_t *vga_rom_buf, int vga_rom_size);
-                      
+
 /* block_net.c */
 BlockDevice *block_device_init_http(const char *url,
                                     int max_cache_size_kb,
