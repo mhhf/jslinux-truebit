@@ -221,24 +221,26 @@ void vm_start(const char *url, int ram_size, const char *cmdline,
 
 static void init_vm_fs(void *arg)
 {
-    printf("init_vm_fs\n");
     VMStartState *s = arg;
     VirtMachineParams *p = s->p;
 
     if (p->fs_count > 0) {
         assert(p->fs_count == 1);
-        p->tab_fs[0].fs_dev = fs_net_init(p->tab_fs[0].filename,
-                                          init_vm_drive, s);
-        if (s->pwd) {
-            fs_net_set_pwd(p->tab_fs[0].fs_dev, s->pwd);
-        }
+        printf("TODO init fs net: init_vm_fs %s\n", p->tab_fs[0].filename);
+        /* p->tab_fs[0].fs_dev = fs_net_init(p->tab_fs[0].filename, */
+        /*                                   init_vm_drive, s); */
+        /* if (s->pwd) { */
+        /*     fs_net_set_pwd(p->tab_fs[0].fs_dev, s->pwd); */
+        /* } */
     } else {
+        /* printf("no fs_count, init vm_drive\n"); */
         init_vm_drive(s);
     }
 }
 
 static int64_t bf_get_sector_count(BlockDevice *bs)
 {
+    /* printf("bf_get_sector_count\n"); */
     BlockDeviceFile *bf = bs->opaque;
     return bf->nb_sectors;
 }
@@ -248,15 +250,16 @@ static int bf_read_async(BlockDevice *bs,
                          BlockDeviceCompletionFunc *cb, void *opaque)
 {
     BlockDeviceFile *bf = bs->opaque;
-    //    printf("bf_read_async: sector_num=%" PRId64 " n=%d\n", sector_num, n);
+    /* printf("bf_read_async: sector_num=%" PRId64 " n=%d\n", sector_num, n); */
 #ifdef DUMP_BLOCK_READ
     {
         static FILE *f;
         if (!f)
             f = fopen("/tmp/read_sect.txt", "wb");
-        fprintf(f, "%" PRId64 " %d\n", sector_num, n);
+        /* fprintf(f, "%" PRId64 " %d\n", sector_num, n); */
     }
 #endif
+    /* printf("bf '%s'\n", bf->f); */
     if (!bf->f)
         return -1;
     if (bf->mode == BF_MODE_SNAPSHOT) {
@@ -272,9 +275,13 @@ static int bf_read_async(BlockDevice *bs,
             buf += SECTOR_SIZE;
         }
     } else {
+        /* printf("seek '%n' '%n'\n", sector_num, SECTOR_SIZE); */
         fseek(bf->f, sector_num * SECTOR_SIZE, SEEK_SET);
         fread(buf, 1, n * SECTOR_SIZE, bf->f);
     }
+    /* for(int i = 0; i < n * SECTOR_SIZE; i++) */
+    /*    printf("%x", buf[i]); */
+    /* printf("\n"); */
     /* synchronous read */
     return 0;
 }
@@ -284,6 +291,7 @@ static int bf_write_async(BlockDevice *bs,
                           uint64_t sector_num, const uint8_t *buf, int n,
                           BlockDeviceCompletionFunc *cb, void *opaque)
 {
+  /* printf("pf_write_async %n\n", sector_num); */
     BlockDeviceFile *bf = bs->opaque;
     int ret;
 
@@ -335,6 +343,7 @@ static BlockDevice *block_device_init(const char *filename,
         mode_str = "rb";
     }
 
+    /* printf("block_device_init %s\n", filename); */
     f = fopen(filename, mode_str);
     if (!f) {
         perror(filename);
@@ -342,6 +351,7 @@ static BlockDevice *block_device_init(const char *filename,
     }
     fseek(f, 0, SEEK_END);
     file_size = ftello(f);
+    /* printf("file_size =%" PRId64 "\n", file_size / 512); */
 
     bs = mallocz(sizeof(*bs));
     bf = mallocz(sizeof(*bf));
@@ -349,6 +359,8 @@ static BlockDevice *block_device_init(const char *filename,
     bf->mode = mode;
     bf->nb_sectors = file_size / 512;
     bf->f = f;
+
+    /* printf("%s", f); */
 
     if (mode == BF_MODE_SNAPSHOT) {
         bf->sector_table = mallocz(sizeof(bf->sector_table[0]) *
@@ -366,11 +378,18 @@ static BlockDevice *block_device_init(const char *filename,
 
 static void init_vm_drive(void *arg)
 {
+    /* printf("init_vm_drive\n"); */
     VMStartState *s = arg;
     VirtMachineParams *p = s->p;
 
     if (p->drive_count > 0) {
         assert(p->drive_count == 1);
+        /* p->tab_drive[0].block_dev = */
+        /*     block_device_init_http(p->tab_drive[0].filename, */
+        /*                            131072, */
+        /*                            init_vm, s); */
+        /* printf("init_vm_drives %x\n", p->drive_count); */
+        /* printf("  filename =%s\n", p->tab_drive[0].filename); */
         p->tab_drive[0].block_dev = block_device_init(p->tab_drive[0].filename, BF_MODE_RW);
         init_vm(s);
     } else {
@@ -380,6 +399,7 @@ static void init_vm_drive(void *arg)
 
 static void init_vm(void *arg)
 {
+    /* printf("init_vm\n"); */
     VMStartState *s = arg;
     VirtMachine *m;
     VirtMachineParams *p = s->p;
@@ -440,6 +460,7 @@ static void init_vm(void *arg)
     }
     free(s);
 
+    /* printf("run\n"); */
     emscripten_async_call(virt_machine_run, m, 0);
 }
 

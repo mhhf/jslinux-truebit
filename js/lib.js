@@ -30,7 +30,8 @@ mergeInto(LibraryManager.library, {
         /* Note: we really send byte values. It would be up to the
          * terminal to support UTF-8 */
         str = String.fromCharCode.apply(String, HEAPU8.subarray(buf, buf + len));
-        term.write(str);
+        process.stdout.write(str)
+        // term.write(str);
     },
 
     console_get_size: function(pw, ph)
@@ -43,7 +44,7 @@ mergeInto(LibraryManager.library, {
 
     fs_export_file: function(filename, buf, buf_len)
     {
-      console.log(63453, filename, buf, buf_len);
+      // console.log(63453, filename, buf, buf_len);
 //         var _filename = Pointer_stringify(filename);
 // //        console.log("exporting " + _filename);
 //         var data = HEAPU8.subarray(buf, buf + buf_len);

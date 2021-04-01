@@ -1,6 +1,6 @@
 /*
  * Filesystem abstraction
- * 
+ *
  * Copyright (c) 2016 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -165,7 +165,7 @@ struct FSDevice {
                     const char *name, uint32_t mode, uint32_t gid);
     int (*fs_open)(FSDevice *fs, FSQID *qid, FSFile *f, uint32_t flags,
                    FSOpenCompletionFunc *cb, void *opaque);
-    int (*fs_create)(FSDevice *fs, FSQID *qid, FSFile *f, const char *name, 
+    int (*fs_create)(FSDevice *fs, FSQID *qid, FSFile *f, const char *name,
                      uint32_t flags, uint32_t mode, uint32_t gid);
     int (*fs_stat)(FSDevice *fs, FSFile *f, FSStat *st);
     int (*fs_setattr)(FSDevice *fs, FSFile *f, uint32_t mask,
@@ -186,7 +186,7 @@ struct FSDevice {
                     FSFile *f, const char *name, uint32_t mode, uint32_t major,
                     uint32_t minor, uint32_t gid);
     int (*fs_readlink)(FSDevice *fs, char *buf, int buf_size, FSFile *f);
-    int (*fs_renameat)(FSDevice *fs, FSFile *f, const char *name, 
+    int (*fs_renameat)(FSDevice *fs, FSFile *f, const char *name,
                        FSFile *new_f, const char *new_name);
     int (*fs_unlinkat)(FSDevice *fs, FSFile *f, const char *name);
     int (*fs_lock)(FSDevice *fs, FSFile *f, const FSLock *lock);

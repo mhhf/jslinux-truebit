@@ -17,7 +17,8 @@ Module.FS.mount(Module.NODEFS, { root: '/home/mhhf/src/jslinux' }, '/home')
 
 const start = () => {
   // console.log("start");
-  Module.ccall("vm_start", null, ["string", "number", "string", "string", "number", "number", "number", "string"], params);
+ // Module.ccall("vm_start", null, ["string", "number", "string", "string", "number", "number", "number", "string"], params);
+ Module.ccall("vm_start", null, ["string", "number", "string", "string", "number", "number", "number", "string"], params);
 }
 
 Module.postRun = start

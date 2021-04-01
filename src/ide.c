@@ -1,6 +1,6 @@
 /*
  * IDE emulation
- * 
+ *
  * Copyright (c) 2003-2016 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -156,7 +156,7 @@
 #define WIN_WRITEDMA_ONCE		0xCB /* 28-Bit - without retries */
 #define WIN_WRITEDMA_QUEUED		0xCC /* write sectors using Queued DMA transfers */
 #define CFA_WRITE_MULTI_WO_ERASE	0xCD /* CFA Write multiple without erase */
-#define WIN_GETMEDIASTATUS		0xDA	
+#define WIN_GETMEDIASTATUS		0xDA
 #define WIN_ACKMEDIACHANGE		0xDB /* ATA-1, ATA-2 vendor */
 #define WIN_POSTBOOT			0xDC
 #define WIN_PREBOOT			0xDD
@@ -215,7 +215,7 @@ struct IDEState {
     int io_nb_sectors;
     int req_nb_sectors;
     EndTransferFunc *end_transfer_func;
-    
+
     int data_index;
     int data_end;
     uint8_t io_buffer[MAX_MULT_SECTORS*512 + 4];
@@ -256,17 +256,17 @@ static void ide_identify(IDEState *s)
 {
     uint16_t *tab;
     uint32_t oldsize;
-    
+
     tab = (uint16_t *)s->io_buffer;
 
     memset(tab, 0, 512 * 2);
 
     stw(tab + 0, 0x0040);
-    stw(tab + 1, s->cylinders); 
+    stw(tab + 1, s->cylinders);
     stw(tab + 3, s->heads);
     stw(tab + 4, 512 * s->sectors); /* sectors */
     stw(tab + 5, 512); /* sector size */
-    stw(tab + 6, s->sectors); 
+    stw(tab + 6, s->sectors);
     stw(tab + 20, 3); /* buffer type */
     stw(tab + 21, 512); /* cache size in sectors */
     stw(tab + 22, 4); /* ecc bytes */
@@ -295,7 +295,7 @@ static void ide_identify(IDEState *s)
     stw(tab + 87, (1 << 14));
 }
 
-static void ide_set_signature(IDEState *s) 
+static void ide_set_signature(IDEState *s)
 {
     s->select &= 0xf0;
     s->nsector = 1;
@@ -304,13 +304,13 @@ static void ide_set_signature(IDEState *s)
     s->hcyl = 0;
 }
 
-static void ide_abort_command(IDEState *s) 
+static void ide_abort_command(IDEState *s)
 {
     s->status = READY_STAT | ERR_STAT;
     s->error = ABRT_ERR;
 }
 
-static void ide_set_irq(IDEState *s) 
+static void ide_set_irq(IDEState *s)
 {
     IDEIFState *ide_if = s->ide_if;
     if (!(ide_if->cmd & IDE_CMD_DISABLE_IRQ)) {
@@ -342,7 +342,7 @@ static int64_t ide_get_sector(IDEState *s)
         sector_num = ((s->select & 0x0f) << 24) | (s->hcyl << 16) |
             (s->lcyl << 8) | s->sector;
     } else {
-        sector_num = ((s->hcyl << 8) | s->lcyl) * 
+        sector_num = ((s->hcyl << 8) | s->lcyl) *
             s->heads * s->sectors +
             (s->select & 0x0f) * s->sectors + (s->sector - 1);
     }
@@ -374,7 +374,7 @@ static void ide_sector_read(IDEState *s)
 
     sector_num = ide_get_sector(s);
     n = s->nsector;
-    if (n == 0) 
+    if (n == 0)
         n = 256;
     if (n > s->req_nb_sectors)
         n = s->req_nb_sectors;
@@ -382,7 +382,7 @@ static void ide_sector_read(IDEState *s)
     printf("read sector=%" PRId64 " count=%d\n", sector_num, n);
 #endif
     s->io_nb_sectors = n;
-    ret = s->bs->read_async(s->bs, sector_num, s->io_buffer, n, 
+    ret = s->bs->read_async(s->bs, sector_num, s->io_buffer, n,
                             ide_sector_read_cb, s);
     if (ret < 0) {
         /* error */
@@ -403,7 +403,7 @@ static void ide_sector_read_cb(void *opaque, int ret)
     IDEState *s = opaque;
     int n;
     EndTransferFunc *func;
-    
+
     n = s->io_nb_sectors;
     ide_set_sector(s, ide_get_sector(s) + n);
     s->nsector = (s->nsector - n) & 0xff;
@@ -436,7 +436,7 @@ static void ide_sector_write_cb1(IDEState *s)
     printf("write sector=%" PRId64 "  count=%d\n",
            sector_num, s->io_nb_sectors);
 #endif
-    ret = s->bs->write_async(s->bs, sector_num, s->io_buffer, s->io_nb_sectors, 
+    ret = s->bs->write_async(s->bs, sector_num, s->io_buffer, s->io_nb_sectors,
                              ide_sector_write_cb2, s);
     if (ret < 0) {
         /* error */
@@ -511,7 +511,7 @@ static void ide_exec_cmd(IDEState *s, int val)
         ide_set_irq(s);
         break;
     case WIN_SETMULT:
-        if (s->nsector > MAX_MULT_SECTORS || 
+        if (s->nsector > MAX_MULT_SECTORS ||
             (s->nsector & (s->nsector - 1)) != 0) {
             ide_abort_command(s);
         } else {
@@ -569,7 +569,7 @@ static void ide_ioport_write(void *opaque, uint32_t offset,
     IDEIFState *s1 = opaque;
     IDEState *s = s1->cur_drive;
     int addr = offset + 1;
-    
+
 #ifdef DEBUG_IDE
     printf("ide: write addr=0x%02x val=0x%02x\n", addr, val);
 #endif
@@ -685,7 +685,7 @@ static void ide_cmd_write(void *opaque, uint32_t offset,
     IDEIFState *s1 = opaque;
     IDEState *s;
     int i;
-    
+
 #ifdef DEBUG_IDE
     printf("ide: cmd write=0x%02x\n", val);
 #endif
@@ -718,7 +718,7 @@ static void ide_data_writew(void *opaque, uint32_t offset,
     IDEState *s = s1->cur_drive;
     int p;
     uint8_t *tab;
-    
+
     if (!s)
         return;
     p = s->data_index;
@@ -737,7 +737,7 @@ static uint32_t ide_data_readw(void *opaque, uint32_t offset, int size_log2)
     IDEState *s = s1->cur_drive;
     int p, ret;
     uint8_t *tab;
-    
+
     if (!s) {
         ret = 0;
     } else {
@@ -801,22 +801,22 @@ IDEIFState *ide_init(PhysMemoryMap *port_map, uint32_t addr, uint32_t addr2,
 {
     int i;
     IDEIFState *s;
-    
+
     s = malloc(sizeof(IDEIFState));
     memset(s, 0, sizeof(*s));
-    
+
     s->irq = irq;
     s->cmd = 0;
 
-    cpu_register_device(port_map, addr, 1, s, ide_data_readw, ide_data_writew, 
+    cpu_register_device(port_map, addr, 1, s, ide_data_readw, ide_data_writew,
                         DEVIO_SIZE16);
-    cpu_register_device(port_map, addr + 1, 7, s, ide_ioport_read, ide_ioport_write, 
+    cpu_register_device(port_map, addr + 1, 7, s, ide_ioport_read, ide_ioport_write,
                         DEVIO_SIZE8);
     if (addr2) {
-        cpu_register_device(port_map, addr2, 1, s, ide_status_read, ide_cmd_write, 
+        cpu_register_device(port_map, addr2, 1, s, ide_status_read, ide_cmd_write,
                             DEVIO_SIZE8);
     }
-    
+
     for(i = 0; i < 2; i++) {
         if (tab_bs[i])
             s->drives[i] = ide_drive_init(s, tab_bs[i]);

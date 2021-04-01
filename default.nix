@@ -14,6 +14,7 @@ in
 pkgs.stdenv.mkDerivation {
   name = "jslinux";
   buildInputs = with pkgs; [
+    ccls
     rustup
     rustc
     lld_11

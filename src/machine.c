@@ -472,7 +472,7 @@ static int load_file(uint8_t **pbuf, const char *filename)
 static void config_load_file(VMConfigLoadState *s, const char *filename,
                              FSLoadFileCB *cb, void *opaque)
 {
-       printf("loading %s\n", filename);
+       /* printf("loading %s\n", filename); */
     {
         uint8_t *buf;
         int size;
@@ -488,7 +488,7 @@ void virt_machine_load_config_file(VirtMachineParams *p,
                                    void *opaque)
 {
     VMConfigLoadState *s;
-    printf("virt_machine_load_config_file %s\n", filename);
+    /* printf("virt_machine_load_config_file %s\n", filename); */
 
     s = mallocz(sizeof(*s));
     s->vm_params = p;
@@ -509,7 +509,7 @@ static void config_file_loaded(void *opaque, uint8_t *buf, int buf_len)
 
     /* load the additional files */
     s->file_index = 0;
-    printf("config_file_loaded\n");
+    /* printf("config_file_loaded\n"); */
     config_additional_file_load(s);
 }
 
@@ -521,7 +521,7 @@ static void config_additional_file_load(VMConfigLoadState *s)
         s->file_index++;
     }
     if (s->file_index == VM_FILE_COUNT) {
-      printf("cb \n");
+      /* printf("cb \n"); */
         if (s->start_cb)
             s->start_cb(s->opaque);
         free(s);
@@ -530,7 +530,7 @@ static void config_additional_file_load(VMConfigLoadState *s)
 
         fname = get_file_path(p->cfg_filename,
                               p->files[s->file_index].filename);
-        printf("file %s\n", fname);
+        /* printf("file %s\n", fname); */
         config_load_file(s, fname,
                          config_additional_file_load_cb, s);
         free(fname);
@@ -549,12 +549,13 @@ static void config_additional_file_load_cb(void *opaque,
 
     /* load the next files */
     s->file_index++;
-    printf("config_additional_file_load_cb\n");
+    /* printf("config_additional_file_load_cb\n"); */
     config_additional_file_load(s);
 }
 
 void vm_add_cmdline(VirtMachineParams *p, const char *cmdline)
 {
+    /* printf("vm_add_cmdline\n"); */
     char *new_cmdline, *old_cmdline;
     if (cmdline[0] == '!') {
         new_cmdline = strdup(cmdline + 1);
@@ -573,6 +574,7 @@ void vm_add_cmdline(VirtMachineParams *p, const char *cmdline)
 
 void virt_machine_free_config(VirtMachineParams *p)
 {
+    /* printf("virt_machine_free_config\n"); */
     int i;
 
     free(p->machine_name);
@@ -600,6 +602,7 @@ void virt_machine_free_config(VirtMachineParams *p)
 
 VirtMachine *virt_machine_init(const VirtMachineParams *p)
 {
+    /* printf("virt_machine_init\n"); */
     const VirtMachineClass *vmc = p->vmc;
     return vmc->virt_machine_init(p);
 }

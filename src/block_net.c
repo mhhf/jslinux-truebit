@@ -401,6 +401,26 @@ static int bf_write_async(BlockDevice *bs,
     return bf_rw_async1(bs, TRUE);
 }
 
+static void fs_wget_fake(const char *url, const char *user, const char *password, void *opaque, WGetWriteCallback *cb, BOOL single_write) {
+  printf("fs_wget fake %s\n", url);
+
+  FILE *f = fopen(url, "rb");
+  fseek(f, 0, SEEK_END);
+  long fsize = ftell(f);
+  fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+  char *string = malloc(fsize + 1);
+  fread(string, 1, fsize, f);
+  fclose(f);
+
+  string[fsize] = 0;
+
+  fwrite(string, fsize, 1, stdout);
+
+  cb(opaque, 0, string, fsize);
+}
+
+
 BlockDevice *block_device_init_http(const char *url,
                                     int max_cache_size_kb,
                                     void (*start_cb)(void *opaque),
@@ -433,7 +453,8 @@ BlockDevice *block_device_init_http(const char *url,
     bs->write_async = bf_write_async;
 
     printf("1234 %s\n", url);
-    fs_wget(url, NULL, NULL, bs, bf_init_onload, TRUE);
+    fs_wget_fake(url, NULL, NULL, bs, bf_init_onload, TRUE);
+
     return bs;
 }
 
@@ -474,6 +495,7 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
     }
 
     bf->nb_sectors = bf->block_size * (uint64_t)bf->nb_blocks;
+    printf("nb_sectors %" PRId64 "\n", bf->nb_sectors);
     bf->n_cached_blocks = 0;
     bf->n_cached_blocks_max = max_int(1, bf->max_cache_size_kb / block_size_kb);
     bf->cur_block_num = -1; /* no request in progress */
@@ -514,6 +536,7 @@ static void bf_init_onload(void *opaque, int err, void *data, size_t size)
             }
             if (l == 1) {
                 block_num = tab_block_num[0];
+                printf("block_num %d\n", block_num);
                 if (!bf_find_block(bf, block_num)) {
                     bf_start_load_block(bs, block_num);
                 }
