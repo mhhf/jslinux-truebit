@@ -555,7 +555,7 @@ static void config_additional_file_load_cb(void *opaque,
 
 void vm_add_cmdline(VirtMachineParams *p, const char *cmdline)
 {
-    /* printf("vm_add_cmdline\n"); */
+    printf("vm_add_cmdline\n");
     char *new_cmdline, *old_cmdline;
     if (cmdline[0] == '!') {
         new_cmdline = strdup(cmdline + 1);

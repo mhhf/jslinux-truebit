@@ -43,11 +43,12 @@
 void virt_machine_run(void *opaque);
 
 /* provided in lib.js */
-extern void console_write(void *opaque, const uint8_t *buf, int len);
-extern void fb_refresh(void *opaque, void *data,
-                       int x, int y, int w, int h, int stride);
+/* extern void console_write(void *opaque, const uint8_t *buf, int len); */
+/* extern void fb_refresh(void *opaque, void *data, */
+/*                        int x, int y, int w, int h, int stride); */
 /* extern void net_recv_packet(EthernetDevice *bs, */
 /*                             const uint8_t *buf, int len); */
+
 
 
 static uint8_t console_fifo[1024];
@@ -60,6 +61,9 @@ static int global_width;
 static int global_height;
 static VirtMachine *global_vm;
 static BOOL global_carrier_state;
+static BOOL global_boot_idle;
+
+FILE *cout;
 
 typedef enum {
     BF_MODE_RO,
@@ -76,6 +80,10 @@ typedef struct BlockDeviceFile {
 
 #define SECTOR_SIZE 512
 
+
+static void console_write(void *opaque, const uint8_t *buf, int len) {
+  fprintf(cout, buf);
+}
 
 static void console_get_size(int *pw, int *ph) {
   pw = 80;
@@ -111,73 +119,13 @@ void console_queue_char(int c)
     }
 }
 
-/* called from JS */
-void display_key_event(int is_down, int key_code)
-{
-    if (global_vm) {
-        vm_send_key_event(global_vm, is_down, key_code);
-    }
-}
-
-/* called from JS */
-static int mouse_last_x, mouse_last_y, mouse_last_buttons;
-
-void display_mouse_event(int dx, int dy, int buttons)
-{
-    if (global_vm) {
-        if (vm_mouse_is_absolute(global_vm) || 1) {
-            dx = min_int(dx, global_width - 1);
-            dy = min_int(dy, global_height - 1);
-            dx = (dx * VIRTIO_INPUT_ABS_SCALE) / global_width;
-            dy = (dy * VIRTIO_INPUT_ABS_SCALE) / global_height;
-        } else {
-            /* relative mouse is not supported */
-            dx = 0;
-            dy = 0;
-        }
-        mouse_last_x = dx;
-        mouse_last_y = dy;
-        mouse_last_buttons = buttons;
-        vm_send_mouse_event(global_vm, dx, dy, 0, buttons);
-    }
-}
-
-/* called from JS */
-void display_wheel_event(int dz)
-{
-    if (global_vm) {
-        vm_send_mouse_event(global_vm, mouse_last_x, mouse_last_y, dz,
-                            mouse_last_buttons);
-    }
-}
-
-/* called from JS */
-void net_write_packet(const uint8_t *buf, int buf_len)
-{
-    EthernetDevice *net = global_vm->net;
-    if (net) {
-        net->device_write_packet(net, buf, buf_len);
-    }
-}
-
-/* called from JS */
-void net_set_carrier(BOOL carrier_state)
-{
-    EthernetDevice *net;
-    global_carrier_state = carrier_state;
-    if (global_vm && global_vm->net) {
-        net = global_vm->net;
-        net->device_set_carrier(net, carrier_state);
-    }
-}
-
-static void fb_refresh1(FBDevice *fb_dev, void *opaque,
-                        int x, int y, int w, int h)
-{
-    int stride = fb_dev->stride;
-    fb_refresh(opaque, fb_dev->fb_data + y * stride + x * 4, x, y, w, h,
-               stride);
-}
+/* static void fb_refresh1(FBDevice *fb_dev, void *opaque, */
+/*                         int x, int y, int w, int h) */
+/* { */
+/*     int stride = fb_dev->stride; */
+/*     fb_refresh(opaque, fb_dev->fb_data + y * stride + x * 4, x, y, w, h, */
+/*                stride); */
+/* } */
 
 static CharacterDevice *console_init(void)
 {
@@ -201,10 +149,14 @@ static void init_vm(void *arg);
 static void init_vm_fs(void *arg);
 static void init_vm_drive(void *arg);
 
+
 void vm_start(const char *url, int ram_size, const char *cmdline,
               const char *pwd, int width, int height, BOOL has_network)
 {
     VMStartState *s;
+
+    global_boot_idle = FALSE;
+    cout = fopen("/home/build/out.txt", "a");
 
     s = mallocz(sizeof(*s));
     s->ram_size = ram_size;
@@ -217,6 +169,11 @@ void vm_start(const char *url, int ram_size, const char *cmdline,
     s->p = mallocz(sizeof(VirtMachineParams));
     virt_machine_set_defaults(s->p);
     virt_machine_load_config_file(s->p, url, init_vm_fs, s);
+}
+
+int _main(int argc, char **argv) {
+  printf("lalala\n");
+  /* vm_start("/home/build/root-riscv64.cfg", 256, "", "", 0, 0, FALSE); */
 }
 
 static void init_vm_fs(void *arg)
@@ -461,8 +418,6 @@ static void init_vm(void *arg)
     }
     free(s);
 
-    /* printf("run\n"); */
-    /* emscripten_async_call(virt_machine_run, m, 0); */
     virt_machine_run(m);
 }
 
@@ -494,12 +449,6 @@ void virt_machine_run(void *opaque)
         }
     }
 
-    fb_dev = m->fb_dev;
-    if (fb_dev) {
-        /* refresh the display */
-        fb_dev->refresh(fb_dev, fb_refresh1, NULL);
-    }
-
     i = 0;
     for(;;) {
         /* wait for an event: the only asynchronous event is the RTC timer */
@@ -516,8 +465,22 @@ void virt_machine_run(void *opaque)
         virt_machine_run(m);
     } else {
         /* printf("sleep %n\n", MAX_SLEEP_TIME); */
-        emscripten_async_call(virt_machine_run, m, MAX_SLEEP_TIME);
-        /* virt_machine_run(m); */
+      if(!global_boot_idle) {
+        global_boot_idle = TRUE;
+        console_queue_char(112);
+        console_queue_char(119);
+        console_queue_char(100);
+        console_queue_char(10);
+        console_queue_char(104);
+        console_queue_char(97);
+        console_queue_char(108);
+        console_queue_char(116);
+        console_queue_char(32);
+        console_queue_char(45);
+        console_queue_char(102);
+        console_queue_char(10);
+      }
+      /* emscripten_async_call(virt_machine_run, m, MAX_SLEEP_TIME); */
+        virt_machine_run(m);
     }
 }
-
