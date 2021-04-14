@@ -147,70 +147,8 @@ typedef struct {
 
 static void init_vm(void *arg);
 static void init_vm_fs(void *arg);
-static void init_vm_drive(void *arg);
 
 
-void vm_start(const char *url, int ram_size, const char *cmdline,
-              const char *pwd, int width, int height, BOOL has_network)
-{
-    VMStartState *s;
-
-    global_boot_idle = FALSE;
-    cout = fopen("/home/build/out.txt", "a");
-
-    s = mallocz(sizeof(*s));
-    s->ram_size = ram_size;
-    s->cmdline = strdup(cmdline);
-    if (pwd)
-        s->pwd = strdup(pwd);
-    global_width = width;
-    global_height = height;
-    s->has_network = has_network;
-    s->p = mallocz(sizeof(VirtMachineParams));
-    /* virt_machine_set_defaults(s->p); */
-
-    VirtMachineParams *p = s->p;
-    p->machine_name = "riscv64";
-    p->vmc = &riscv_machine_class;
-    p->vmc->virt_machine_set_defaults(p);
-    p->ram_size = (uint64_t)128 << 20;
-    p->files[VM_FILE_BIOS].filename = strdup("bbl64.bin");
-    p->files[VM_FILE_KERNEL].filename = strdup("kernel-riscv64.bin");
-    p->cmdline = strdup("console=hvc0 root=/dev/vda rw");
-    p->tab_drive[p->drive_count].filename = strdup("/home/build/root-riscv64.bin");
-    p->tab_drive[p->drive_count].device = NULL;
-    p->drive_count++;
-    p->display_device = NULL;
-    p->input_device = NULL;
-
-    /* init_vm_fs(s); */
-    virt_machine_load_config_file(p, url, init_vm_fs, s);
-}
-
-int _main(int argc, char **argv) {
-  printf("lalala\n");
-  return 0;
-  /* vm_start("/home/build/root-riscv64.cfg", 256, "", "", 0, 0, FALSE); */
-}
-
-static void init_vm_fs(void *arg)
-{
-    VMStartState *s = arg;
-    VirtMachineParams *p = s->p;
-
-    if (p->fs_count > 0) {
-        assert(p->fs_count == 1);
-        printf("TODO init fs net: init_vm_fs %s\n", p->tab_fs[0].filename);
-        /* p->tab_fs[0].fs_dev = fs_net_init(p->tab_fs[0].filename, */
-        /*                                   init_vm_drive, s); */
-        /* if (s->pwd) { */
-        /*     fs_net_set_pwd(p->tab_fs[0].fs_dev, s->pwd); */
-        /* } */
-    } else {
-        /* printf("no fs_count, init vm_drive\n"); */
-        init_vm_drive(s);
-    }
-}
 
 static int64_t bf_get_sector_count(BlockDevice *bs)
 {
@@ -302,141 +240,76 @@ static int bf_write_async(BlockDevice *bs,
 }
 
 
-static BlockDevice *block_device_init(const char *filename,
-                                      BlockDeviceModeEnum mode)
+/* static BlockDevice *block_device_init(const char *filename, */
+/*                                       BlockDeviceModeEnum mode) */
+/* { */
+/*     return bs; */
+/* } */
+
+
+void vm_start(int ram_size)
 {
+    global_boot_idle = FALSE;
+    cout = fopen("/home/build/out.txt", "a");
+
+    VirtMachineParams *p = mallocz(sizeof(VirtMachineParams));
+    p->machine_name = "riscv64";
+    p->vmc = &riscv_machine_class;
+    p->ram_size = (uint64_t)ram_size << 20;
+    p->cmdline = strdup("console=hvc0 root=/dev/vda rw");
+    p->drive_count = 1;
+
+    FILE *f = fopen("/home/build/bbl64.bin", "rb");
+    p->files[VM_FILE_BIOS].len = 53786;
+    p->files[VM_FILE_BIOS].buf = malloc(p->files[VM_FILE_BIOS].len);
+    fread(p->files[VM_FILE_BIOS].buf, 1, p->files[VM_FILE_BIOS].len, f);
+    fclose(f);
+
+    // /home/build/kernel-riscv64.bin
+    f = fopen("/home/build/kernel-riscv64.bin", "rb");
+    p->files[VM_FILE_KERNEL].len = 3979556;
+    p->files[VM_FILE_KERNEL].buf = malloc(p->files[VM_FILE_KERNEL].len);
+    fread(p->files[VM_FILE_KERNEL].buf, 1, p->files[VM_FILE_KERNEL].len, f);
+    fclose(f);
+
+
     BlockDevice *bs;
     BlockDeviceFile *bf;
-    int64_t file_size;
-    FILE *f;
-    const char *mode_str;
-
-    if (mode == BF_MODE_RW) {
-        mode_str = "r+b";
-    } else {
-        mode_str = "rb";
-    }
-
-    /* printf("block_device_init %s\n", filename); */
-    f = fopen(filename, mode_str);
-    if (!f) {
-        perror(filename);
-        exit(1);
-    }
-    fseek(f, 0, SEEK_END);
-    file_size = ftello(f);
-    /* printf("file_size =%" PRId64 "\n", file_size / 512); */
-
-    bs = mallocz(sizeof(*bs));
+    f = fopen("/home/build/root-riscv64.bin", "r+b");
     bf = mallocz(sizeof(*bf));
-
-    bf->mode = mode;
-    bf->nb_sectors = file_size / 512;
+    bf->mode = BF_MODE_RW;
+    bf->nb_sectors = 4194304 / 512;
     bf->f = f;
 
-    /* printf("%s", f); */
-
-    if (mode == BF_MODE_SNAPSHOT) {
-        bf->sector_table = mallocz(sizeof(bf->sector_table[0]) *
-                                   bf->nb_sectors);
-    }
-
+    bs = mallocz(sizeof(*bs));
     bs->opaque = bf;
     bs->get_sector_count = bf_get_sector_count;
     bs->read_async = bf_read_async;
     bs->write_async = bf_write_async;
-    return bs;
-}
+    p->tab_drive[0].block_dev = bs;
 
 
+    // INIT
 
-static void init_vm_drive(void *arg)
-{
-    /* printf("init_vm_drive\n"); */
-    VMStartState *s = arg;
-    VirtMachineParams *p = s->p;
-
-    if (p->drive_count > 0) {
-        assert(p->drive_count == 1);
-        /* p->tab_drive[0].block_dev = */
-        /*     block_device_init_http(p->tab_drive[0].filename, */
-        /*                            131072, */
-        /*                            init_vm, s); */
-        /* printf("init_vm_drives %x\n", p->drive_count); */
-        /* printf("  filename =%s\n", p->tab_drive[0].filename); */
-        p->tab_drive[0].block_dev = block_device_init(p->tab_drive[0].filename, BF_MODE_RW);
-        init_vm(s);
-    } else {
-        init_vm(s);
-    }
-}
-
-static void init_vm(void *arg)
-{
-    /* printf("init_vm\n"); */
-    VMStartState *s = arg;
     VirtMachine *m;
-    VirtMachineParams *p = s->p;
-    int i;
 
     p->rtc_real_time = TRUE;
-    p->ram_size = s->ram_size << 20;
-    if (s->cmdline && s->cmdline[0] != '\0') {
-        vm_add_cmdline(s->p, s->cmdline);
-    }
+    p->ram_size = ram_size << 20;
 
-    if (global_width > 0 && global_height > 0) {
-        /* enable graphic output if needed */
-        if (!p->display_device)
-            p->display_device = strdup("simplefb");
-        p->width = global_width;
-        p->height = global_height;
-    } else {
-        p->console = console_init();
-    }
+    p->console = console_init();
 
-    if (p->eth_count > 0 && !s->has_network) {
-        /* remove the interfaces */
-        for(i = 0; i < p->eth_count; i++) {
-            free(p->tab_eth[i].ifname);
-            free(p->tab_eth[i].driver);
-        }
-        p->eth_count = 0;
-    }
-
-    // DONT expose network
-    /* if (p->eth_count > 0) { */
-    /*     EthernetDevice *net; */
-    /*     int i; */
-    /*     assert(p->eth_count == 1); */
-    /*     net = mallocz(sizeof(EthernetDevice)); */
-    /*     net->mac_addr[0] = 0x02; */
-    /*     for(i = 1; i < 6; i++) */
-    /*         net->mac_addr[i] = (int)(emscripten_random() * 256); */
-    /*     net->write_packet = net_recv_packet; */
-    /*     net->opaque = NULL; */
-    /*     p->tab_eth[0].net = net; */
-    /* } */
-
-    m = virt_machine_init(p);
+    m = p->vmc->virt_machine_init(p);
     global_vm = m;
-
-    virt_machine_free_config(s->p);
-
-    if (m->net) {
-        m->net->device_set_carrier(m->net, global_carrier_state);
-    }
-
-    free(s->p);
-    free(s->cmdline);
-    if (s->pwd) {
-        memset(s->pwd, 0, strlen(s->pwd));
-        free(s->pwd);
-    }
-    free(s);
 
     virt_machine_run(m);
 }
+
+int main() {
+  vm_start(128);
+}
+
+
+
 
 /* need to be long enough to hide the non zero delay of setTimeout(_, 0) */
 #define MAX_EXEC_TOTAL_CYCLE 3000000
