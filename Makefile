@@ -62,3 +62,8 @@ build/r64.wasm: build/riscvemu64-wasm.wasm
 	wat2wasm build/riscvemu64-wasm.wat --debug-names -o build/r64.wasm
 
 -include $(wildcard *.d)
+
+run:
+	echo "" > build/out.txt
+	node build/run.js
+	cat build/out.txt
