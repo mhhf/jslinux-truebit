@@ -1,0 +1,10 @@
+all:
+	export YYY=${HOME}/src/truebit-sandbox
+	docker run --network host                       \
+		-v ${YYY}/docker-clef:/root/.clef             \
+		-v ${YYY}/docker-geth:/root/.ethereum         \
+		-v $(pwd):/root/jslinux                       \
+		-v ${YYY}/docker-ipfs:/root/.ipfs             \
+		--name truebit                                \
+		--rm -it truebitprotocol/truebit-eth:latest   \
+		"cd /root/jslinux && make -f jslinux.make"

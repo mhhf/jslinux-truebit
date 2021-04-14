@@ -85,21 +85,28 @@ int vm_get_int_opt(JSONValue obj, const char *name, int *pval, int def_val)
 static int vm_get_str2(JSONValue obj, const char *name, const char **pstr,
                       BOOL is_opt)
 {
+    printf("HHH %s\n", name);
     JSONValue val;
     val = json_object_get(obj, name);
+    printf("H01 %s\n", name);
     if (json_is_undefined(val)) {
+        printf("H01 %s\n", name);
         if (is_opt) {
+            printf("H02 %s\n", name);
             *pstr = NULL;
             return 0;
         } else {
+            printf("H03 %s\n", name);
             vm_error("expecting '%s' property\n", name);
             return -1;
         }
     }
     if (val.type != JSON_STR) {
+        printf("H04\n");
         vm_error("%s: string expected\n", name);
         return -1;
     }
+        printf("H05\n");
     *pstr = val.u.str->data;
     return 0;
 }
@@ -220,11 +227,13 @@ static const VirtMachineClass *virt_machine_find_class(const char *machine_name)
 static int virt_machine_parse_config(VirtMachineParams *p,
                                      char *config_file_str, int len)
 {
+    /* printf("virt_machine_parse_config\n"); */
     int version, val;
     const char *tag_name, *str;
     char buf1[256];
     JSONValue cfg, obj, el;
 
+    /* printf("virt_machine_parse_config0\n"); */
     cfg = json_parse_value_len(config_file_str, len);
     if (json_is_error(cfg)) {
         vm_error("error: %s\n", json_get_error(cfg));
@@ -232,8 +241,9 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         return -1;
     }
 
-    if (vm_get_int(cfg, "version", &version) < 0)
+    if (vm_get_int(cfg, "version", &version) < 0) {
         goto tag_fail;
+    }
     if (version != VM_CONFIG_VERSION) {
         if (version > VM_CONFIG_VERSION) {
             vm_error("The emulator is too old to run this VM: please upgrade\n");
@@ -244,21 +254,32 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         }
     }
 
-    if (vm_get_str(cfg, "machine", &str) < 0)
+    printf("F0\n");
+    if (vm_get_str(cfg, "machine", &str) < 0) {
+        printf("FFFFFFFFFFFFFFFFFFFFFF0 %d\n", vm_get_str(cfg, "machine", &str));
         goto tag_fail;
+    }
+    printf("F111111\n");
     p->machine_name = strdup(str);
+    printf("F2\n");
     p->vmc = virt_machine_find_class(p->machine_name);
+    printf("F3\n");
+    p->vmc = virt_machine_find_class(p->machine_name);
+    printf("F4\n");
     if (!p->vmc) {
         vm_error("Unknown machine name: %s\n", p->machine_name);
         goto tag_fail;
     }
+    printf("F5\n");
     p->vmc->virt_machine_set_defaults(p);
+    printf("irt_machine_parse_config2\n");
 
     tag_name = "memory_size";
     if (vm_get_int(cfg, tag_name, &val) < 0)
         goto tag_fail;
     p->ram_size = (uint64_t)val << 20;
 
+    printf("virt_machine_parse_config3\n");
     tag_name = "bios";
     if (vm_get_str_opt(cfg, tag_name, &str) < 0)
         goto tag_fail;
@@ -273,6 +294,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->files[VM_FILE_KERNEL].filename = strdup(str);
     }
 
+    printf("virt_machine_parse_config4\n");
     tag_name = "initrd";
     if (vm_get_str_opt(cfg, tag_name, &str) < 0)
         goto tag_fail;
@@ -286,6 +308,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->cmdline = cmdline_subst(str);
     }
 
+    printf("virt_machine_parse_config5\n");
     for(;;) {
         snprintf(buf1, sizeof(buf1), "drive%d", p->drive_count);
         obj = json_object_get(cfg, buf1);
@@ -304,6 +327,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->drive_count++;
     }
 
+    printf("virt_machine_parse_config6\n");
     for(;;) {
         snprintf(buf1, sizeof(buf1), "fs%d", p->fs_count);
         obj = json_object_get(cfg, buf1);
@@ -329,6 +353,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->fs_count++;
     }
 
+    printf("virt_machine_parse_config7\n");
     for(;;) {
         snprintf(buf1, sizeof(buf1), "eth%d", p->eth_count);
         obj = json_object_get(cfg, buf1);
@@ -349,6 +374,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->eth_count++;
     }
 
+    printf("virt_machine_parse_config8\n");
     p->display_device = NULL;
     obj = json_object_get(cfg, "display0");
     if (!json_is_undefined(obj)) {
@@ -366,6 +392,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         }
     }
 
+    printf("virt_machine_parse_config9\n");
     if (vm_get_str_opt(cfg, "input_device", &str) < 0)
         goto tag_fail;
     p->input_device = strdup_null(str);
@@ -383,6 +410,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         }
     }
 
+    printf("virt_machine_parse_config10\n");
     tag_name = "rtc_local_time";
     el = json_object_get(cfg, tag_name);
     if (!json_is_undefined(el)) {
@@ -393,6 +421,7 @@ static int virt_machine_parse_config(VirtMachineParams *p,
         p->rtc_local_time = el.u.b;
     }
 
+    printf("virt_machine_parse_config11\n");
     json_free(cfg);
     return 0;
  tag_fail:
@@ -450,20 +479,34 @@ static int load_file(uint8_t **pbuf, const char *filename)
     int size;
     uint8_t *buf;
 
+    printf("load_file '%s'\n", filename);
+
     f = fopen(filename, "rb");
     if (!f) {
+        printf("no file\n");
         perror(filename);
         exit(1);
     }
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
+    printf("post fopen..\n");
+    /* fseek(f, 0, SEEK_END); */
+    /* exit(1); */
+    printf("post fseek..\n");
+    if(filename = "") {
+      size = 269;
+    } else {
+      printf("!!!!post ftell..%s\n", filename);
+    }
+    printf("post ftell..\n");
     fseek(f, 0, SEEK_SET);
+    printf("post fseek..\n");
     buf = malloc(size);
+    printf("post malloc..\n");
     if (fread(buf, 1, size, f) != size) {
         fprintf(stderr, "%s: read error\n", filename);
         exit(1);
     }
     fclose(f);
+    printf("post close..\n");
     *pbuf = buf;
     return size;
 }
@@ -472,11 +515,16 @@ static int load_file(uint8_t **pbuf, const char *filename)
 static void config_load_file(VMConfigLoadState *s, const char *filename,
                              FSLoadFileCB *cb, void *opaque)
 {
-       /* printf("loading %s\n", filename); */
+   printf("loadinggg %s\n", filename);
+   printf("here\n");
     {
+        printf("here\n");
         uint8_t *buf;
         int size;
+        printf("yes here\n");
         size = load_file(&buf, filename);
+        printf("yes yes\n");
+        printf("size %d\n", size);
         cb(opaque, buf, size);
         free(buf);
     }
@@ -488,7 +536,7 @@ void virt_machine_load_config_file(VirtMachineParams *p,
                                    void *opaque)
 {
     VMConfigLoadState *s;
-    /* printf("virt_machine_load_config_file %s\n", filename); */
+    printf("virt_machine_load_config_file %s\n", filename);
 
     s = mallocz(sizeof(*s));
     s->vm_params = p;
@@ -501,36 +549,41 @@ void virt_machine_load_config_file(VirtMachineParams *p,
 
 static void config_file_loaded(void *opaque, uint8_t *buf, int buf_len)
 {
+    printf("config_file_loaded\n");
     VMConfigLoadState *s = opaque;
     VirtMachineParams *p = s->vm_params;
+    printf("config_file_loaded0\n");
 
     if (virt_machine_parse_config(p, (char *)buf, buf_len) < 0)
         exit(1);
+    printf("config_file_loaded1\n");
 
     /* load the additional files */
     s->file_index = 0;
-    /* printf("config_file_loaded\n"); */
     config_additional_file_load(s);
 }
 
 static void config_additional_file_load(VMConfigLoadState *s)
 {
+    printf("config_additional_file_load\n");
     VirtMachineParams *p = s->vm_params;
     while (s->file_index < VM_FILE_COUNT &&
            p->files[s->file_index].filename == NULL) {
         s->file_index++;
     }
+    printf("post while\n");
     if (s->file_index == VM_FILE_COUNT) {
-      /* printf("cb \n"); */
+      printf("cb \n");
         if (s->start_cb)
             s->start_cb(s->opaque);
         free(s);
     } else {
+      printf("else \n");
         char *fname;
 
         fname = get_file_path(p->cfg_filename,
                               p->files[s->file_index].filename);
-        /* printf("file %s\n", fname); */
+        printf("file %s\n", fname);
         config_load_file(s, fname,
                          config_additional_file_load_cb, s);
         free(fname);
@@ -540,6 +593,7 @@ static void config_additional_file_load(VMConfigLoadState *s)
 static void config_additional_file_load_cb(void *opaque,
                                            uint8_t *buf, int buf_len)
 {
+    printf("config_additional_file_load_cb\n");
     VMConfigLoadState *s = opaque;
     VirtMachineParams *p = s->vm_params;
 
@@ -549,13 +603,12 @@ static void config_additional_file_load_cb(void *opaque,
 
     /* load the next files */
     s->file_index++;
-    /* printf("config_additional_file_load_cb\n"); */
     config_additional_file_load(s);
 }
 
 void vm_add_cmdline(VirtMachineParams *p, const char *cmdline)
 {
-    printf("vm_add_cmdline\n");
+    printf(stderr, "vm_add_cmdline\n");
     char *new_cmdline, *old_cmdline;
     if (cmdline[0] == '!') {
         new_cmdline = strdup(cmdline + 1);

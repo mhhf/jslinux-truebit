@@ -23,14 +23,16 @@
 #
 
 # Build the Javascript version of TinyEMU
+
+TRUEBIT_PATH=${HOME}/src/truebit-eth
+
 EMCC=emcc
 EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -fno-strict-aliasing
 #EMCFLAGS+=-Werror
-EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s FILESYSTEM=1 -s "EXPORTED_FUNCTIONS=['__main']" -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["ccall", "cwrap", "UTF8ToString"]'
-EMLDFLAGS_ASMJS:=$(EMLDFLAGS) -s WASM=0
+EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0
 EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=67108864 -s ALLOW_MEMORY_GROWTH=1
 
-PROGS=build/riscvemu64-wasm.js build/run.js build/r64.wasm
+PROGS=build/riscvemu64-wasm.js build/run.js dist/info.json
 
 all: $(PROGS)
 
@@ -38,9 +40,8 @@ JS_OBJS=build/jsemu.js.o build/softfp.js.o build/virtio.js.o build/fs.js.o build
 JS_OBJS+=build/iomem.js.o build/cutils.js.o build/aes.js.o build/sha256.js.o
 
 RISCVEMU64_OBJS=$(JS_OBJS) build/riscv_cpu64.js.o build/riscv_machine.js.o build/machine.js.o
-RISCVEMU32_OBJS=$(JS_OBJS) build/riscv_cpu32.js.o build/riscv_machine.js.o build/machine.js.o
 
-build/riscvemu64-wasm.js: $(RISCVEMU64_OBJS) js/lib.js
+build/riscvemu64-wasm.js: $(RISCVEMU64_OBJS)
 	mkdir -p build
 	$(EMCC) $(EMLDFLAGS_WASM) -o $@ $(RISCVEMU64_OBJS)
 
@@ -56,9 +57,37 @@ build/run.js: web/run.js
 	mkdir -p build
 	cp -r web/* build/
 
-build/r64.wasm: build/riscvemu64-wasm.wasm
-	wasm2wat build/riscvemu64-wasm.wasm > build/riscvemu64-wasm.wat
-	sed -i 's/wasi_snapshot_preview1/env/g' build/riscvemu64-wasm.wat
-	wat2wasm build/riscvemu64-wasm.wat --debug-names -o build/r64.wasm
+# Change this
+dist/info.json: build/riscvemu64-wasm.wasm
+	node ${TRUEBIT_PATH}/emscripten-module-wrapper/prepare.js \
+		build/riscvemu64-wasm.js \
+		--asmjs \
+		--out=dist \
+		--upload-ipfs \
+		--ipfs-host 10.100.0.1 \
+		--file root-riscv64.cfg \
+		--file root-riscv64.bin\
+		--file bbl64.bin \
+		--file kernel-riscv64.bin \
+		--file out.txt
+
+run:
+	${TRUEBIT_PATH}/ocaml-offchain/interpreter/wasm \
+		-m \
+		-disable-float \
+		-output \
+		-memory-size 26 \
+		-stack-size 24 \
+		-table-size 24 \
+		-globals-size 12 \
+		-call-stack-size 14 \
+		-file root-riscv64.cfg \
+		-file root-riscv64.bin \
+		-file bbl64.bin \
+		-file kernel-riscv64.bin \
+		-file out.txt \
+		-wasm dist/globals.wasm
 
 -include $(wildcard *.d)
+
+

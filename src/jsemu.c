@@ -43,7 +43,7 @@
 void virt_machine_run(void *opaque);
 
 /* provided in lib.js */
-/* extern void console_write(void *opaque, const uint8_t *buf, int len); */
+extern void log(const uint8_t *buf, int len);
 /* extern void fb_refresh(void *opaque, void *data, */
 /*                        int x, int y, int w, int h, int stride); */
 /* extern void net_recv_packet(EthernetDevice *bs, */
@@ -82,6 +82,7 @@ typedef struct BlockDeviceFile {
 
 
 static void console_write(void *opaque, const uint8_t *buf, int len) {
+	fprintf(stderr, buf);
   fprintf(cout, buf);
 }
 
@@ -153,6 +154,7 @@ static void init_vm_drive(void *arg);
 void vm_start(const char *url, int ram_size, const char *cmdline,
               const char *pwd, int width, int height, BOOL has_network)
 {
+    fprintf(stderr, "vm start!");
     VMStartState *s;
 
     global_boot_idle = FALSE;
@@ -171,33 +173,35 @@ void vm_start(const char *url, int ram_size, const char *cmdline,
     virt_machine_load_config_file(s->p, url, init_vm_fs, s);
 }
 
-int _main(int argc, char **argv) {
-  printf("lalala\n");
-  /* vm_start("/home/build/root-riscv64.cfg", 256, "", "", 0, 0, FALSE); */
+int main() {
+	fprintf(stderr, "main called!");
+  vm_start("root-riscv64.cfg", 256, "", "", 0, 0, FALSE);
 }
 
 static void init_vm_fs(void *arg)
 {
+    printf(stderr, "init vm fs");
+
     VMStartState *s = arg;
     VirtMachineParams *p = s->p;
 
     if (p->fs_count > 0) {
         assert(p->fs_count == 1);
-        printf("TODO init fs net: init_vm_fs %s\n", p->tab_fs[0].filename);
+        printf(stderr, "TODO init fs net: init_vm_fs %s\n", p->tab_fs[0].filename);
         /* p->tab_fs[0].fs_dev = fs_net_init(p->tab_fs[0].filename, */
         /*                                   init_vm_drive, s); */
         /* if (s->pwd) { */
         /*     fs_net_set_pwd(p->tab_fs[0].fs_dev, s->pwd); */
         /* } */
     } else {
-        /* printf("no fs_count, init vm_drive\n"); */
+        printf(stderr, "no fs_count, init vm_drive\n");
         init_vm_drive(s);
     }
 }
 
 static int64_t bf_get_sector_count(BlockDevice *bs)
 {
-    /* printf("bf_get_sector_count\n"); */
+    printf(stderr, "bf_get_sector_count\n");
     BlockDeviceFile *bf = bs->opaque;
     return bf->nb_sectors;
 }
@@ -223,6 +227,7 @@ static int bf_read_async(BlockDevice *bs,
         int i;
         for(i = 0; i < n; i++) {
             if (!bf->sector_table[sector_num]) {
+                printf("OHH NOOOOOOOOOOOOOOO\n");
                 fseek(bf->f, sector_num * SECTOR_SIZE, SEEK_SET);
                 fread(buf, 1, SECTOR_SIZE, bf->f);
             } else {
@@ -248,7 +253,7 @@ static int bf_write_async(BlockDevice *bs,
                           uint64_t sector_num, const uint8_t *buf, int n,
                           BlockDeviceCompletionFunc *cb, void *opaque)
 {
-  /* printf("pf_write_async %n\n", sector_num); */
+  printf(stderr, "pf_write_async %n\n", sector_num);
     BlockDeviceFile *bf = bs->opaque;
     int ret;
 
@@ -300,7 +305,7 @@ static BlockDevice *block_device_init(const char *filename,
         mode_str = "rb";
     }
 
-    /* printf("block_device_init %s\n", filename); */
+    printf(stderr, "block_device_init %s\n", filename);
     f = fopen(filename, mode_str);
     if (!f) {
         perror(filename);
@@ -317,7 +322,7 @@ static BlockDevice *block_device_init(const char *filename,
     bf->nb_sectors = file_size / 512;
     bf->f = f;
 
-    /* printf("%s", f); */
+    printf(stderr, "%s", f);
 
     if (mode == BF_MODE_SNAPSHOT) {
         bf->sector_table = mallocz(sizeof(bf->sector_table[0]) *
@@ -335,7 +340,7 @@ static BlockDevice *block_device_init(const char *filename,
 
 static void init_vm_drive(void *arg)
 {
-    /* printf("init_vm_drive\n"); */
+    printf(stderr, "init_vm_drive\n");
     VMStartState *s = arg;
     VirtMachineParams *p = s->p;
 
@@ -356,7 +361,7 @@ static void init_vm_drive(void *arg)
 
 static void init_vm(void *arg)
 {
-    /* printf("init_vm\n"); */
+    printf(stderr, "init_vm\n");
     VMStartState *s = arg;
     VirtMachine *m;
     VirtMachineParams *p = s->p;
@@ -459,13 +464,14 @@ void virt_machine_run(void *opaque)
         i++;
     }
 
-    /* printf("delay %x\n", delay); */
+    printf(stderr, "delay %x\n", delay);
     if (delay == 0) {
         /* emscripten_async_call(virt_machine_run, m, 0); */
         virt_machine_run(m);
     } else {
-        /* printf("sleep %n\n", MAX_SLEEP_TIME); */
+      printf(stderr, "sleep %n\n", MAX_SLEEP_TIME);
       if(!global_boot_idle) {
+        printf(stderr, "IDLE");
         global_boot_idle = TRUE;
         console_queue_char(112);
         console_queue_char(119);
