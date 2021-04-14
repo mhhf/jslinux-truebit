@@ -82,12 +82,12 @@ typedef struct BlockDeviceFile {
 
 
 static void console_write(void *opaque, const uint8_t *buf, int len) {
-  fprintf(cout, buf);
-}
-
-static void console_get_size(int *pw, int *ph) {
-  pw = 80;
-  ph = 24;
+  /* printf("len: %d", len); */
+  for ( int i = 0; i < len; i++ )
+  {
+    fprintf(cout, "%c",  buf[i]);
+    /* printf("%c", buf[i]); */
+  }
 }
 
 static int console_read(void *opaque, uint8_t *buf, int len)
@@ -167,12 +167,29 @@ void vm_start(const char *url, int ram_size, const char *cmdline,
     global_height = height;
     s->has_network = has_network;
     s->p = mallocz(sizeof(VirtMachineParams));
-    virt_machine_set_defaults(s->p);
-    virt_machine_load_config_file(s->p, url, init_vm_fs, s);
+    /* virt_machine_set_defaults(s->p); */
+
+    VirtMachineParams *p = s->p;
+    p->machine_name = "riscv64";
+    p->vmc = &riscv_machine_class;
+    p->vmc->virt_machine_set_defaults(p);
+    p->ram_size = (uint64_t)128 << 20;
+    p->files[VM_FILE_BIOS].filename = strdup("bbl64.bin");
+    p->files[VM_FILE_KERNEL].filename = strdup("kernel-riscv64.bin");
+    p->cmdline = strdup("console=hvc0 root=/dev/vda rw");
+    p->tab_drive[p->drive_count].filename = strdup("/home/build/root-riscv64.bin");
+    p->tab_drive[p->drive_count].device = NULL;
+    p->drive_count++;
+    p->display_device = NULL;
+    p->input_device = NULL;
+
+    /* init_vm_fs(s); */
+    virt_machine_load_config_file(p, url, init_vm_fs, s);
 }
 
 int _main(int argc, char **argv) {
   printf("lalala\n");
+  return 0;
   /* vm_start("/home/build/root-riscv64.cfg", 256, "", "", 0, 0, FALSE); */
 }
 
@@ -431,7 +448,6 @@ void virt_machine_run(void *opaque)
 {
     VirtMachine *m = opaque;
     int delay, i;
-    FBDevice *fb_dev;
 
     if (m->console_dev && virtio_console_can_write_data(m->console_dev)) {
         uint8_t buf[128];
@@ -442,8 +458,8 @@ void virt_machine_run(void *opaque)
         if (ret > 0)
             virtio_console_write_data(m->console_dev, buf, ret);
         if (console_resize_pending) {
-            int w, h;
-            console_get_size(&w, &h);
+            int w = 80;
+            int h = 24;
             virtio_console_resize_event(m->console_dev, w, h);
             console_resize_pending = FALSE;
         }
