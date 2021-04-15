@@ -67,3 +67,6 @@ run:
 	echo "" > build/out.txt
 	node build/run.js
 	cat build/out.txt
+
+clean:
+	rm -fdR build
