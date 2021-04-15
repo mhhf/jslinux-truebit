@@ -29,8 +29,8 @@ TRUEBIT_PATH=${HOME}/src/truebit-eth
 EMCC=emcc
 EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -fno-strict-aliasing
 #EMCFLAGS+=-Werror
-EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0
-EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=67108864 -s ALLOW_MEMORY_GROWTH=1
+EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s "EXPORTED_FUNCTIONS=['_main']"
+EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=1073741824
 
 PROGS=build/riscvemu64-wasm.js build/run.js dist/info.json
 
@@ -59,29 +59,31 @@ build/run.js: web/run.js
 
 # Change this
 dist/info.json: build/riscvemu64-wasm.wasm
+	npx wasm2wat "build/riscvemu64-wasm.wasm" -o "build/riscvemu64-wasm.wat"
+	sed -i 's/wasi_snapshot_preview1/env/g' "build/riscvemu64-wasm.wat"
+	sed -i 's/wasi_unstable/env/g' "build/riscvemu64-wasm.wat"
+	sed -i 's/wasi/env/g' "build/riscvemu64-wasm.wat"
+	npx wat2wasm "build/riscvemu64-wasm.wat" -o "build/riscvemu64-wasm.wasm"
 	node ${TRUEBIT_PATH}/emscripten-module-wrapper/prepare.js \
 		build/riscvemu64-wasm.js \
 		--asmjs \
 		--out=dist \
-		--upload-ipfs \
-		--ipfs-host 10.100.0.1 \
-		--file root-riscv64.cfg \
-		--file root-riscv64.bin\
+		--file root-riscv64.bin \
 		--file bbl64.bin \
 		--file kernel-riscv64.bin \
 		--file out.txt
+		# --upload-ipfs -ipfs-host 10.100.0.1
 
 run:
 	${TRUEBIT_PATH}/ocaml-offchain/interpreter/wasm \
 		-m \
 		-disable-float \
 		-output \
-		-memory-size 26 \
-		-stack-size 24 \
-		-table-size 24 \
-		-globals-size 12 \
-		-call-stack-size 14 \
-		-file root-riscv64.cfg \
+		-memory-size 28 \
+		-stack-size 26 \
+		-table-size 26 \
+		-globals-size 14 \
+		-call-stack-size 16 \
 		-file root-riscv64.bin \
 		-file bbl64.bin \
 		-file kernel-riscv64.bin \
@@ -91,3 +93,5 @@ run:
 -include $(wildcard *.d)
 
 
+clean:
+	rm -fdR build dist ./*.out
