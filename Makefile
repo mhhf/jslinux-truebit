@@ -71,7 +71,8 @@ dist/info.json: build/riscvemu64-wasm.wasm
 		--file root-riscv64.bin \
 		--file bbl64.bin \
 		--file kernel-riscv64.bin \
-		--file out.txt
+		--file stdin.txt \
+		--file stdout.txt
 		# --upload-ipfs -ipfs-host 10.100.0.1
 
 run:
@@ -87,7 +88,8 @@ run:
 		-file root-riscv64.bin \
 		-file bbl64.bin \
 		-file kernel-riscv64.bin \
-		-file out.txt \
+		-file stdout.txt \
+		-file stdin.txt \
 		-wasm dist/globals.wasm
 
 -include $(wildcard *.d)
