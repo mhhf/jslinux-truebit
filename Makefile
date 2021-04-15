@@ -64,9 +64,9 @@ build/r64.wasm: build/riscvemu64-wasm.wasm
 -include $(wildcard *.d)
 
 run:
-	echo "" > build/out.txt
+	echo "" > build/stdout.txt
 	node build/run.js
-	cat build/out.txt
+	cat build/stdout.txt
 
 clean:
 	rm -fdR build
