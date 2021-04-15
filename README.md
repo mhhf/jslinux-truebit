@@ -6,7 +6,7 @@ With trustless ci/cd setup I mean in particular building and
 The general Idea is to compile a [instruction set architecture](https://en.wikipedia.org/wiki/Instruction_set_architecture) to wasm which runs
 linux on truebit and run all build tasks within that VM on truebit.
 
-This repo is a fork of Bellard's jslinux project [1] modefied
+This repo is a fork of Bellard's [jslinux] project modefied
 to be run as a standalone wasm from a single main() function.
 It assumes a fs with multiple input files:
 
@@ -22,9 +22,9 @@ the machines stdin while the stdout is saved to stdout.txt.
 
 ## Requiremens
 
-This is build with nix [2] which you can get [here](https://nixos.org/download.html).
+This is build with [nix] which you can get [here](https://nixos.org/download.html).
 If you want to run it with the truebit interpreter, make sure
-you have truebit-eth [3] repo checked out by asking for it [here](https://gitter.im/TruebitProtocol/community).
+you have [truebit-eth] repo checked out by asking for it [here](https://gitter.im/TruebitProtocol/community).
 
 ## Usage
 
@@ -93,7 +93,6 @@ I don't understand why its called to begin with, yet.
 
 ## Resources
 
-[1]: https://bellard.org/jslinux/
-[2]: https://nixos.org/
-[3]: https://github.com/TruebitProtocol/truebit-eth
-[4]: https://en.wikipedia.org/wiki/Instruction_set_architecture
+[jslinux]: https://bellard.org/jslinux/
+[nix]: https://nixos.org/
+[truebit-eth]: https://github.com/TruebitProtocol/truebit-eth
