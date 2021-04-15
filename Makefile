@@ -28,7 +28,7 @@ EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -
 #EMCFLAGS+=-Werror
 EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s FILESYSTEM=1 -s "EXPORTED_FUNCTIONS=['_console_queue_char','_vm_start', '_main']" -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["ccall", "cwrap", "UTF8ToString", "FS", "NODEFS"]' -lnodefs.js
 EMLDFLAGS_ASMJS:=$(EMLDFLAGS) -s WASM=0
-EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=67108864 -s ALLOW_MEMORY_GROWTH=1
+EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=1073741824
 
 PROGS=build/riscvemu64-wasm.js build/run.js build/r64.wasm
 
