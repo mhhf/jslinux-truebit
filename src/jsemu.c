@@ -63,7 +63,8 @@ static VirtMachine *global_vm;
 static BOOL global_carrier_state;
 static BOOL global_boot_idle;
 
-FILE *cout;
+FILE *out;
+FILE *in;
 
 typedef enum {
     BF_MODE_RO,
@@ -82,11 +83,9 @@ typedef struct BlockDeviceFile {
 
 
 static void console_write(void *opaque, const uint8_t *buf, int len) {
-  /* printf("len: %d", len); */
   for ( int i = 0; i < len; i++ )
   {
-    fprintf(cout, "%c",  buf[i]);
-    /* printf("%c", buf[i]); */
+    fprintf(out, "%c",  buf[i]);
   }
 }
 
@@ -253,7 +252,8 @@ void vm_start(int ram_size)
 
     printf("opening out.txt\n");
     global_boot_idle = FALSE;
-    cout = fopen("out.txt", "a");
+    out = fopen("stdout.txt", "a");
+    in = fopen("stdin.txt", "r");
 
     VirtMachineParams *p = mallocz(sizeof(VirtMachineParams));
     p->machine_name = "riscv64";
@@ -364,22 +364,13 @@ void virt_machine_run(void *opaque)
     } else {
         /* printf("sleep %n\n", MAX_SLEEP_TIME); */
       if(!global_boot_idle) {
-        printf(stderr, "IDLE");
         global_boot_idle = TRUE;
-        console_queue_char(112);
-        console_queue_char(119);
-        console_queue_char(100);
-        console_queue_char(10);
-        console_queue_char(104);
-        console_queue_char(97);
-        console_queue_char(108);
-        console_queue_char(116);
-        console_queue_char(32);
-        console_queue_char(45);
-        console_queue_char(102);
-        console_queue_char(10);
+        int c;
+        while ((c = fgetc(in)) != EOF)
+        {
+            console_queue_char(c);
+        }
       }
-      /* emscripten_async_call(virt_machine_run, m, MAX_SLEEP_TIME); */
         virt_machine_run(m);
     }
 }
