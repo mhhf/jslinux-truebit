@@ -26,6 +26,7 @@ pkgs.stdenv.mkDerivation {
     # real_pkgs.binaryen
     # wasmer
   ];
-  # shellHook = ''
-  # '';
+  shellHook = ''
+    export TRUEBIT_PATH=$HOME/src/truebit-eth
+  '';
 }

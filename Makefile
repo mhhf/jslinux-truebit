@@ -30,7 +30,7 @@ EMCC=emcc
 EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -fno-strict-aliasing
 #EMCFLAGS+=-Werror
 EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s "EXPORTED_FUNCTIONS=['_main']"
-EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=1073741824
+EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=1073741824 -s INITIAL_MEMORY=1073741824
 
 PROGS=build/riscvemu64-wasm.js dist/info.json
 
