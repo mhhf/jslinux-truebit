@@ -32,7 +32,7 @@ EMCFLAGS=-O0 -g --llvm-opts 2 -Wall -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -
 EMLDFLAGS=-O0 -g --memory-init-file 0 --closure 0 -s "EXPORTED_FUNCTIONS=['_main']"
 EMLDFLAGS_WASM:=$(EMLDFLAGS) -s WASM=1 -s TOTAL_MEMORY=1073741824
 
-PROGS=build/riscvemu64-wasm.js build/run.js dist/info.json
+PROGS=build/riscvemu64-wasm.js dist/info.json
 
 all: $(PROGS)
 
@@ -52,10 +52,6 @@ build/riscv_cpu64.js.o: src/riscv_cpu.c
 build/%.js.o: src/%.c
 	mkdir -p build
 	$(EMCC) $(EMCFLAGS) -c -o $@ $<
-
-build/run.js: web/run.js
-	mkdir -p build
-	cp -r web/* build/
 
 # Change this
 dist/info.json: build/riscvemu64-wasm.wasm
