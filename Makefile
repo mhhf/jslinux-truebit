@@ -76,11 +76,11 @@ run:
 		-m \
 		-disable-float \
 		-output \
-		-memory-size 28 \
-		-stack-size 26 \
-		-table-size 26 \
-		-globals-size 14 \
-		-call-stack-size 16 \
+		-memory-size 26 \
+		-stack-size 22 \
+		-table-size 22 \
+		-globals-size 12 \
+		-call-stack-size 14 \
 		-file root-riscv64.bin \
 		-file bbl64.bin \
 		-file kernel-riscv64.bin \
