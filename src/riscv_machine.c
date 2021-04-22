@@ -82,7 +82,12 @@ typedef struct RISCVMachine {
 static uint64_t rtc_get_real_time(RISCVMachine *s)
 {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    printf("call clock_gettime\n");
+    /* clock_gettime(CLOCK_MONOTONIC, &ts); */
+    // uint64_t to long
+    // s->cpu_state->insn_counter
+    ts.tv_sec = 0;
+    ts.tv_nsec = 0;
     return (uint64_t)ts.tv_sec * RTC_FREQ +
         (ts.tv_nsec / (1000000000 / RTC_FREQ));
 }

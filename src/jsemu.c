@@ -313,7 +313,7 @@ void vm_start(int ram_size)
 }
 
 int main() {
-  vm_start(512);
+  vm_start(128);
 }
 
 
