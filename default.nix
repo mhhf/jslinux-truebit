@@ -12,7 +12,7 @@ let
 in
 
 pkgs.stdenv.mkDerivation {
-  name = "jslinux";
+  name = "jslinux-node-fs";
   buildInputs = with pkgs; [
     ccls
     rustup

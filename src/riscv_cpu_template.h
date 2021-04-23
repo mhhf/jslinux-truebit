@@ -313,6 +313,9 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rs1 = (insn >> 15) & 0x1f;
         rs2 = (insn >> 20) & 0x1f;
 
+        if(s->insn_counter >= 0xc41597) {
+          printf("TICK %x\n", opcode);
+        }
 
         switch(opcode) {
 #ifdef CONFIG_EXT_C
@@ -1724,10 +1727,12 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
     jump_insn: ;
     } /* end of main loop */
  illegal_insn:
+    printf("ILLEGAL INSTRUCTION %x    %x\n", insn, opcode);
     s->pending_exception = CAUSE_ILLEGAL_INSTRUCTION;
     s->pending_tval = insn;
  mmu_exception:
  exception:
+    printf("EXCEPTION\n");
     s->pc = GET_PC();
     if (s->pending_exception >= 0) {
         /* Note: the idea is that one exception counts for one cycle. */
