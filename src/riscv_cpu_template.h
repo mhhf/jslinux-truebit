@@ -313,7 +313,7 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rs1 = (insn >> 15) & 0x1f;
         rs2 = (insn >> 20) & 0x1f;
 
-        if(s->insn_counter >= 0xc41597 && s->insn_counter < 0xcc7c3a) {
+        if(s->insn_counter >= 0xdecbe9 && s->insn_counter < 0xdf092a) {
           printf("TACK %x\n", opcode);
         }
 
