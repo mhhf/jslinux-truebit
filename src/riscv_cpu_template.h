@@ -314,7 +314,7 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rs2 = (insn >> 20) & 0x1f;
 
         if(s->insn_counter >= 0xdecbe9 && s->insn_counter < 0xdf092a) {
-          printf("TACK %016" PRIx64 "  %x\n", s->idump_reginsn_counter, opcode);
+          printf("TACK %016" PRIx64 "  %x\n", s->insn_counter, opcode);
         }
 
         switch(opcode) {
