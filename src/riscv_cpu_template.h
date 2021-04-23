@@ -313,8 +313,11 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rs1 = (insn >> 15) & 0x1f;
         rs2 = (insn >> 20) & 0x1f;
 
-        if(s->insn_counter >= 0xdecbe9 && s->insn_counter < 0xdf092a) {
+
+        if(s->insn_counter >= 0xdedf81 && s->insn_counter < 0xdf092a) {
           printf("TACK %016" PRIx64 "  %x\n", s->insn_counter, opcode);
+          printf("pc=0x"); print_target_ulong(GET_PC()); printf(" insn=%08x\n", insn);
+          dump_regs(s);
         }
 
         switch(opcode) {
