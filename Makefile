@@ -76,9 +76,9 @@ run:
 		-m \
 		-disable-float \
 		-output \
-		-memory-size 28 \
-		-stack-size 26 \
-		-table-size 26 \
+		-memory-size 26 \
+		-stack-size 24 \
+		-table-size 24 \
 		-globals-size 14 \
 		-call-stack-size 16 \
 		-file root-riscv64.bin \
