@@ -248,7 +248,10 @@ static int bf_write_async(BlockDevice *bs,
 
 void vm_start(int ram_size)
 {
+    FILE *f;
     global_boot_idle = FALSE;
+
+    printf("opening stdout.txt and stdin.txt\n");
     out = fopen("/home/build/stdout.txt", "a");
     in = fopen("/home/build/stdin.txt", "r");
 
@@ -259,20 +262,21 @@ void vm_start(int ram_size)
     p->cmdline = strdup("console=hvc0 root=/dev/vda rw");
     p->drive_count = 1;
 
-    FILE *f = fopen("/home/build/bbl64.bin", "rb");
+    printf("opening bbl64.bin\n");
+    f = fopen("/home/build/bbl64.bin", "rb");
     p->files[VM_FILE_BIOS].len = 53786;
     p->files[VM_FILE_BIOS].buf = malloc(p->files[VM_FILE_BIOS].len);
     fread(p->files[VM_FILE_BIOS].buf, 1, p->files[VM_FILE_BIOS].len, f);
     fclose(f);
 
-    // /home/build/kernel-riscv64.bin
+    printf("opening kernel-riscv64.bin\n");
     f = fopen("/home/build/kernel-riscv64.bin", "rb");
     p->files[VM_FILE_KERNEL].len = 3979556;
     p->files[VM_FILE_KERNEL].buf = malloc(p->files[VM_FILE_KERNEL].len);
     fread(p->files[VM_FILE_KERNEL].buf, 1, p->files[VM_FILE_KERNEL].len, f);
     fclose(f);
 
-
+    printf("opening root-riscv64.bin\n");
     BlockDevice *bs;
     BlockDeviceFile *bf;
     f = fopen("/home/build/root-riscv64.bin", "r+b");
@@ -280,6 +284,8 @@ void vm_start(int ram_size)
     bf->mode = BF_MODE_RW;
     bf->nb_sectors = 4194304 / 512;
     bf->f = f;
+
+    printf("initializing block storage\n");
 
     bs = mallocz(sizeof(*bs));
     bs->opaque = bf;
@@ -289,6 +295,7 @@ void vm_start(int ram_size)
     p->tab_drive[0].block_dev = bs;
 
 
+    printf("initializing vm\n");
     // INIT
 
     VirtMachine *m;
@@ -301,6 +308,7 @@ void vm_start(int ram_size)
     m = p->vmc->virt_machine_init(p);
     global_vm = m;
 
+    printf("running vm\n");
     virt_machine_run(m);
 }
 
