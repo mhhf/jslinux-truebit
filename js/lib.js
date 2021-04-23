@@ -26,6 +26,7 @@
 mergeInto(LibraryManager.library, {
     console_write: function(opaque, buf, len)
     {
+      console.log("a");
         var str;
         /* Note: we really send byte values. It would be up to the
          * terminal to support UTF-8 */
@@ -36,6 +37,7 @@ mergeInto(LibraryManager.library, {
 
     fs_export_file: function(filename, buf, buf_len)
     {
+      console.log("a");
       // console.log(63453, filename, buf, buf_len);
 //         var _filename = Pointer_stringify(filename);
 // //        console.log("exporting " + _filename);
@@ -184,6 +186,7 @@ mergeInto(LibraryManager.library, {
 
   net_recv_packet: function(bs, buf, buf_len)
   {
+      console.log("a");
       if (net_state) {
           net_state.recv_packet(HEAPU8.subarray(buf, buf + buf_len));
       }
@@ -192,6 +195,7 @@ mergeInto(LibraryManager.library, {
   /* file buffer API */
   file_buffer_get_new_handle: function()
   {
+      console.log("a");
       var h;
       if (typeof Browser.fbuf_table == "undefined") {
           Browser.fbuf_table = new Object();
@@ -251,12 +255,14 @@ mergeInto(LibraryManager.library, {
 
   file_buffer_reset: function(bs)
   {
+      console.log("a");
       _file_buffer_resize(bs, 0);
       _file_buffer_init(bs);
   },
 
   file_buffer_write: function(bs, offset, buf, size)
   {
+      console.log("a");
       var h, data, i;
       h = HEAPU32[bs >> 2];
       if (h) {
@@ -282,6 +288,7 @@ mergeInto(LibraryManager.library, {
 
   file_buffer_set: function(bs, offset, val, size)
   {
+      console.log("a");
       var h, data, i;
       h = HEAPU32[bs >> 2];
       if (h) {
