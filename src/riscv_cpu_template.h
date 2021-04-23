@@ -218,11 +218,6 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         return;
     insn_counter_addend = s->insn_counter + n_cycles1;
     s->n_cycles = n_cycles1;
-    if(!insn_c)
-      insn_c = 0;
-    if(insn_c % 2 == 0) {
-      printf("tick %016" PRIx64 "\n", s->insn_counter);
-    }
     // printf("tack 00000000029cfcdc \n", s->insn_counter);
     // printf("tick %lf\n", ((double) s->insn_counter) / ((double) 0x029cfcdc));
 
@@ -239,6 +234,13 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
     code_ptr = NULL;
     code_end = NULL;
     code_to_pc_addend = s->pc;
+
+    if(!insn_c)
+      insn_c = 0;
+    if(insn_c % 2 == 0) {
+      printf("tick %016" PRIx64 "   %lu\n", s->insn_counter, s->pc);
+    }
+    insn_c++;
 
     /* we use a single execution loop to keep a simple control flow
        for emscripten */
@@ -310,6 +312,8 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rd = (insn >> 7) & 0x1f;
         rs1 = (insn >> 15) & 0x1f;
         rs2 = (insn >> 20) & 0x1f;
+
+
         switch(opcode) {
 #ifdef CONFIG_EXT_C
         C_QUADRANT(0)
