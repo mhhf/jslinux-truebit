@@ -120,8 +120,8 @@ static void dump_regs(RISCVCPUState *s)
     print_target_ulong(s->pc);
     printf(" ");
     for(i = 1; i < 32; i++) {
-        printf("%-3s=", reg_name[i]);
-        print_target_ulong(s->reg[i]);
+        /* printf("%s\n", reg_name[i]); */
+        /* print_target_ulong(s->reg[i]); */
         if ((i & (cols - 1)) == (cols - 1))
             printf("\n");
         else
