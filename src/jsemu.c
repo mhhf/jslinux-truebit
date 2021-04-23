@@ -83,6 +83,7 @@ typedef struct BlockDeviceFile {
 
 
 static void console_write(void *opaque, const uint8_t *buf, int len) {
+  printf("writing out \"%.*s\"\n",len,buf);
   for ( int i = 0; i < len; i++ )
   {
     fprintf(out, "%c",  buf[i]);
@@ -364,10 +365,12 @@ void virt_machine_run(void *opaque)
         /* printf("sleep %n\n", MAX_SLEEP_TIME); */
       if(!global_boot_idle) {
         global_boot_idle = TRUE;
+        printf("IDLE\n");
         int c;
         while ((c = fgetc(in)) != EOF)
         {
             console_queue_char(c);
+            printf("putting char %c\n", c);
         }
       }
         virt_machine_run(m);
