@@ -197,6 +197,7 @@ static inline uintx_t glue(mulhsu, XLEN)(intx_t a, uintx_t b)
         goto jump_insn;            \
     } while (0)
 
+uint64_t insn_c;
 static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
                                                    int n_cycles1)
 {
@@ -217,8 +218,13 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         return;
     insn_counter_addend = s->insn_counter + n_cycles1;
     s->n_cycles = n_cycles1;
-    printf("tick %016" PRIx64 "\n", s->insn_counter);
-    /* printf("timeout %016" PRIx64 "\n", timeout); */
+    if(!insn_c)
+      insn_c = 0;
+    if(insn_c % 2 == 0) {
+      printf("tick %016" PRIx64 "\n", s->insn_counter);
+    }
+    // printf("tack 00000000029cfcdc \n", s->insn_counter);
+    // printf("tick %lf\n", ((double) s->insn_counter) / ((double) 0x029cfcdc));
 
     /* check pending interrupts */
     if (unlikely((s->mip & s->mie) != 0)) {

@@ -92,7 +92,7 @@ static uint64_t rtc_get_real_time(RISCVMachine *s)
     ts.tv_nsec = 100000 * clock_counter;
     clock_counter++;
 
-    printf("clock_gettime %ld %ld\n", ts.tv_sec, ts.tv_nsec);
+    /* printf("clock_gettime %ld %ld\n", ts.tv_sec, ts.tv_nsec); */
     return (uint64_t)ts.tv_sec * RTC_FREQ +
         (ts.tv_nsec / (1000000000 / RTC_FREQ));
 }
