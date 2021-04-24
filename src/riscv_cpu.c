@@ -116,11 +116,11 @@ static void dump_regs(RISCVCPUState *s)
     int i, cols;
     const char priv_str[4] = "USHM";
     cols = 256 / MAX_XLEN;
-    printf("pc =");
+    printf("pc =\n");
     print_target_ulong(s->pc);
     printf(" ");
     for(i = 1; i < 32; i++) {
-        /* printf("%s\n", reg_name[i]); */
+        printf("%s\n", reg_name[i]);
         /* print_target_ulong(s->reg[i]); */
         if ((i & (cols - 1)) == (cols - 1))
             printf("\n");
@@ -145,6 +145,7 @@ static void dump_regs(RISCVCPUState *s)
 
 static __attribute__((unused)) void cpu_abort(RISCVCPUState *s)
 {
+    /* printf("CPU ABORT"); */
     dump_regs(s);
     abort();
 }
@@ -1068,14 +1069,14 @@ static void raise_exception2(RISCVCPUState *s, uint32_t cause,
             flag = 0;
 #endif
         if (flag) {
-            log_printf("raise_exception: cause=0x%08x tval=0x", cause);
+            printf("raise_exception: cause=0x%08x tval=0x", cause);
 #ifdef CONFIG_LOGFILE
             fprint_target_ulong(log_file, tval);
 #else
             print_target_ulong(tval);
 #endif
             log_printf("\n");
-            dump_regs(s);
+            /* dump_regs(s); */
         }
     }
 #endif

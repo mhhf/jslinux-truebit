@@ -62,6 +62,7 @@ dist/info.json: build/riscvemu64-wasm.wasm
 	npx wat2wasm "build/riscvemu64-wasm.wat" -o "build/riscvemu64-wasm.wasm"
 	node ${TRUEBIT_PATH}/emscripten-module-wrapper/prepare.js \
 		build/riscvemu64-wasm.js \
+		--analyze \
 		--asmjs \
 		--out=dist \
 		--file root-riscv64.bin \

@@ -235,12 +235,12 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
     code_end = NULL;
     code_to_pc_addend = s->pc;
 
-    if(!insn_c)
-      insn_c = 0;
-    if(insn_c % 2 == 0) {
-      printf("tick %016" PRIx64 "   %lu\n", s->insn_counter, s->pc);
-    }
-    insn_c++;
+    // if(!insn_c)
+    //   insn_c = 0;
+    // if(insn_c % 2 == 0) {
+    //   printf("tick %016" PRIx64 "   %lu\n", s->insn_counter, s->pc);
+    // }
+    // insn_c++;
 
     /* we use a single execution loop to keep a simple control flow
        for emscripten */
@@ -314,11 +314,11 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
         rs2 = (insn >> 20) & 0x1f;
 
 
-        if(s->insn_counter == 0xdedf81) {
-          printf("TACK %016" PRIx64 "  %x\n", s->insn_counter, opcode);
-          printf("pc=0x"); print_target_ulong(GET_PC()); printf(" insn=%08x\n", insn);
-          dump_regs(s);
-        }
+        // if(s->insn_counter == 0xdedf81000000) {
+        //   printf("TACK %016" PRIx64 "  %x\n", s->insn_counter, opcode);
+        //   printf("pc=0x"); print_target_ulong(GET_PC()); printf(" insn=%08x\n", insn);
+        //   dump_regs(s);
+        // }
 
         switch(opcode) {
 #ifdef CONFIG_EXT_C
@@ -1730,12 +1730,12 @@ static void no_inline glue(riscv_cpu_interp_x, XLEN)(RISCVCPUState *s,
     jump_insn: ;
     } /* end of main loop */
  illegal_insn:
-    printf("ILLEGAL INSTRUCTION %x    %x\n", insn, opcode);
+    // printf("ILLEGAL INSTRUCTION %x    %x\n", insn, opcode);
     s->pending_exception = CAUSE_ILLEGAL_INSTRUCTION;
     s->pending_tval = insn;
  mmu_exception:
  exception:
-    printf("EXCEPTION\n");
+    // printf("EXCEPTION\n");
     s->pc = GET_PC();
     if (s->pending_exception >= 0) {
         /* Note: the idea is that one exception counts for one cycle. */

@@ -83,7 +83,7 @@ typedef struct BlockDeviceFile {
 
 
 static void console_write(void *opaque, const uint8_t *buf, int len) {
-  printf("writing out \"%.*s\"\n",len,buf);
+  /* printf("writing out \"%.*s\"\n",len,buf); */
   for ( int i = 0; i < len; i++ )
   {
     fprintf(out, "%c",  buf[i]);
@@ -252,7 +252,7 @@ void vm_start(int ram_size)
     FILE *f;
     global_boot_idle = FALSE;
 
-    printf("opening stdout.txt and stdin.txt\n");
+    /* printf("opening stdout.txt and stdin.txt\n"); */
     out = fopen("stdout.txt", "a");
     in = fopen("stdin.txt", "r");
 
@@ -263,21 +263,21 @@ void vm_start(int ram_size)
     p->cmdline = strdup("console=hvc0 root=/dev/vda rw");
     p->drive_count = 1;
 
-    printf("opening bbl64.bin\n");
+    /* printf("opening bbl64.bin\n"); */
     f = fopen("bbl64.bin", "rb");
     p->files[VM_FILE_BIOS].len = 53786;
     p->files[VM_FILE_BIOS].buf = malloc(p->files[VM_FILE_BIOS].len);
     fread(p->files[VM_FILE_BIOS].buf, 1, p->files[VM_FILE_BIOS].len, f);
     fclose(f);
 
-    printf("opening kernel-riscv64.bin\n");
+    /* printf("opening kernel-riscv64.bin\n"); */
     f = fopen("kernel-riscv64.bin", "rb");
     p->files[VM_FILE_KERNEL].len = 3979556;
     p->files[VM_FILE_KERNEL].buf = malloc(p->files[VM_FILE_KERNEL].len);
     fread(p->files[VM_FILE_KERNEL].buf, 1, p->files[VM_FILE_KERNEL].len, f);
     fclose(f);
 
-    printf("opening root-riscv64.bin\n");
+    /* printf("opening root-riscv64.bin\n"); */
     BlockDevice *bs;
     BlockDeviceFile *bf;
     f = fopen("root-riscv64.bin", "r+b");
@@ -286,7 +286,7 @@ void vm_start(int ram_size)
     bf->nb_sectors = 4194304 / 512;
     bf->f = f;
 
-    printf("initializing block storage\n");
+    /* printf("initializing block storage\n"); */
 
     bs = mallocz(sizeof(*bs));
     bs->opaque = bf;
@@ -296,7 +296,7 @@ void vm_start(int ram_size)
     p->tab_drive[0].block_dev = bs;
 
 
-    printf("initializing vm\n");
+    /* printf("initializing vm\n"); */
     // INIT
 
     VirtMachine *m;
@@ -309,7 +309,7 @@ void vm_start(int ram_size)
     m = p->vmc->virt_machine_init(p);
     global_vm = m;
 
-    printf("running vm\n");
+    /* printf("running vm\n"); */
     virt_machine_run(m);
 }
 
@@ -365,12 +365,12 @@ void virt_machine_run(void *opaque)
         /* printf("sleep %n\n", MAX_SLEEP_TIME); */
       if(!global_boot_idle) {
         global_boot_idle = TRUE;
-        printf("IDLE\n");
+        /* printf("IDLE\n"); */
         int c;
         while ((c = fgetc(in)) != EOF)
         {
             console_queue_char(c);
-            printf("putting char %c\n", c);
+            /* printf("putting char %c\n", c); */
         }
       }
         virt_machine_run(m);
