@@ -21,12 +21,11 @@ The root disk is a ext2 file system with a minimal linux installation,
 which gets booted. After the boot the content of stdin.txt is piped to
 the machines stdin while the stdout is saved to stdout.txt.
 
-Currently its only meant as a poc disregarding performance. Currently
-the performance of the truebit wasm interpreter is ~600 times slower
-then that of the nodejs native wasm interpreter.
+Currently its only meant as a poc disregarding performance, which is ~600 times slower
+for the truebit-wasm interpreter then that of the nodejs native one.
 Overall booting and shutting down the vm took 15min on an avarage
-laptop. Sadly this is not scalable to almost all real world tasks.
-However one could study several performance improvements like truebits-jit,
+laptop (truebit) vs 1,5 sec with node. Sadly this is not scalable to almost all real world tasks.
+However one could explore several performance improvements like truebits-jit,
 improving the interpreter or leveraging intel-vm or amd-v for the specific vm emulation task.
 
 ## Requiremens
